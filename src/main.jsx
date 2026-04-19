@@ -906,7 +906,7 @@ function App() {
       <div id="crm-content">
         <div className="dash-header">
           <div className="dash-greeting">
-            👋 Good Afternoon, Baylee!
+            👋 Good Afternoon, Shrey!
             <div className="dash-dropdown">
               My Dashboard
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>

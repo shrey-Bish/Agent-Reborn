@@ -2,7 +2,7 @@
 
 **Team:** Agent Reborn  
 **Track:** Lofty MVP Track — "Onboarding Flow"  
-**🚀 Live Demo:** [https://agent-reborn-git-sumanth-shreys-projects-411f215b.vercel.app/#](https://agent-reborn-git-sumanth-shreys-projects-411f215b.vercel.app/#)
+**🚀 Live Demo:** [https://agent-reborn.vercel.app](https://agent-reborn.vercel.app)
 
 Lofty Academy reimagines how real estate agents first experience Lofty. Instead of watching passive tutorial videos or navigating static tooltips, agents are guided by a continuous, voice-enabled AI tutor that operates the CRM interface in real-time alongside them. 
 
