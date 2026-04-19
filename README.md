@@ -17,9 +17,41 @@ We focused on the **Onboarding Flow** to solve the primary bottleneck of softwar
 
 To make this product infinitely scalable (so Lofty never has to manually write another onboarding tutorial), we engineered a closed-loop RAG pipeline:
 
+```mermaid
+flowchart TD
+    %% Users and Frontend
+    User([Agent User]) -->|"Voice Question"| WebSpeech["Web Speech API"]
+    WebSpeech --> |"Transcription"| Chat["React Frontend (Lofty Academy)"]
+    
+    %% Semantic Context
+    DOM["Live DOM Schema"] -.->|"Available UI Buttons"| Chat
+    
+    %% Backend Pipeline
+    Chat <-->|"Lesson Flow & Dialog"| EdgeFn["Insforge Edge Functions"]
+    
+    subgraph Insforge Backend
+        EdgeFn
+        DB[("Postgres DB (Lessons, Auth)")]
+    end
+    
+    EdgeFn <-->|"Read / Write"| DB
+    
+    %% Gemini & Grounding
+    EdgeFn -->|"Prompt + DOM Schema + Current State"| Gemini["Gemini 2.0 Flash"]
+    Gemini -.->|"Live Knowledge Retrieval"| GoogleSearch["Google Search Grounding\n(help.lofty.com)"]
+    GoogleSearch -.->|"Official Documentation"| Gemini
+    
+    %% Actions & Voice
+    Gemini -->|"JSON Target / Text Answer"| EdgeFn
+    EdgeFn -->|"TTS Generation"| ElevenLabs["ElevenLabs API"]
+    ElevenLabs -->|"Audio Stream"| Chat
+    Chat -->|"Moves UI Cursor & Speaks"| User
+```
+
 1. **Google Search Grounding:** Gemini actively searches `help.lofty.com` live to retrieve official knowledge for answering user questions and scraping release notes. It generates lessons directly from Lofty's own published documentation.
 2. **Live DOM Schema:** Instead of using a hardcoded `CRM_SCHEMA`, the system scans the actual React DOM currently on the screen. It maps what buttons and navigation elements are *actually* visible, preventing the AI from hallucinating UI actions.
 3. **The Result:** We achieve an AI that possesses **real-time Help Center knowledge AND real-time UI awareness**. Whenever Lofty ships a feature or updates a help article, Lofty Academy autonomously updates its interactive lessons without human intervention.
+
 
 ## 🛠️ Tech Stack & Requirements Met
 
@@ -63,4 +95,4 @@ insforge functions deploy generate-lesson
 ```
 
 ## 📜 License
-Built for Innovation Hacks 2.0 by Team Agent Reborn.
+Built for GlobeHacks 2026 by Team Agent Reborn.
