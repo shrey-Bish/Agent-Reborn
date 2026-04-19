@@ -1,8 +1,10 @@
-# Lofty Academy - Hackathon Build Plan
+# Agent Reborn - Lofty Academy Hackathon Build Plan
 
 ## Winning Positioning
 
 **Lofty Academy** is a continuous AI product education layer for Lofty.
+
+**Team/project name:** Agent Reborn.
 
 Lofty confirmed the pain is mixed: onboarding must be strong, but experienced agents
 also need ongoing value after product updates.
@@ -175,7 +177,7 @@ Requirements from the sponsor image:
 Use these four so the side-track story is clear:
 
 1. **Auth**
-   - Demo login as `sarah@lofty.demo`
+   - Demo login as `shrey@lofty.demo`
    - Role options: `agent` and `admin`
    - Agent sees the guided lesson
    - Admin sees the Content-to-Lesson Engine
@@ -390,7 +392,7 @@ Build the first dashboard to match the attached Lofty screenshot as closely as p
   Marketplace, and AI Copilots
 - Search bar and user avatar
 - Right utility rail
-- "Good Evening, Baylee!" dashboard greeting
+- "Good Evening, Shrey!" dashboard greeting
 - New Updates / Announcements card
 - Today's New Leads card
 - Today's Opportunities card

@@ -1,0 +1,21 @@
+{
+  "title": "Lofty 4.40: Sales Agent Digital Employee",
+  "sourceType": "release_note",
+  "entryPoint": "Dashboard > New Updates",
+  "steps": [
+    {
+      "target": "updates",
+      "label": "Open New Updates",
+      "narration": "This release card introduces new Lofty capabilities without forcing agents to leave their workflow."
+    },
+    {
+      "target": "updates",
+      "label": "Explain Sales Agent",
+      "narration": "Sales Agent is now presented as a Digital Employee agents can hire, evaluate, and understand as a teammate."
+    }
+  ],
+  "trustNotes": [
+    "Explain what the AI will do before asking the agent to rely on it.",
+    "Show that the agent remains in control of outreach decisions."
+  ]
+}

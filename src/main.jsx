@@ -1,6 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import {
+  fetchBackendSnapshot,
+  fetchDemoProfiles,
+  findLessonBySourceType,
+  generateLessonFromContent,
+  isInsforgeConfigured,
+  recordLessonProgress,
+  recordQuestionEvent,
+} from "./insforgeBackend";
 
 const releaseUpdates = [
   {
@@ -45,10 +54,10 @@ const helpCenterTutorial = {
 
 const lessonSteps = [
   {
-    target: "updates",
-    label: "New Updates",
-    cursorLabel: "Release notes",
-    narration: "This card is where Lofty introduces new product capabilities. Lofty Academy can turn each release note into a guided in-product lesson.",
+    target: "touch",
+    label: "Need Keep In Touch",
+    cursorLabel: "Follow-up basics",
+    narration: "This widget is the low-friction starting point. Agent Reborn explains the daily follow-up habits a new agent needs before moving into AI signals.",
   },
   {
     target: "opportunities",
@@ -77,6 +86,10 @@ function App() {
       : "";
   const startWithHelpExtraction = demoMode === "help";
   const startWithReleaseExplanation = demoMode === "release";
+  const storedDemoUserEmail =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("agent-reborn-demo-user")
+      : "";
 
   const [activeTarget, setActiveTarget] = useState(
     startWithHelpExtraction || startWithReleaseExplanation ? "updates" : null,
@@ -89,11 +102,28 @@ function App() {
   const [leadInsightOpen, setLeadInsightOpen] = useState(false);
   const [cursorPulse, setCursorPulse] = useState(0);
   const [knowledgeMode, setKnowledgeMode] = useState(startWithHelpExtraction);
+  const [backendLessons, setBackendLessons] = useState([]);
+  const [activeBackendLesson, setActiveBackendLesson] = useState(null);
+  const [demoProfiles, setDemoProfiles] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [backendStatus, setBackendStatus] = useState({
+    configured: isInsforgeConfigured,
+    connected: false,
+    loading: isInsforgeConfigured,
+    generating: false,
+    error: isInsforgeConfigured ? "" : "Add Insforge env vars to enable live backend proof.",
+    lessonCount: 0,
+    sourceCount: 0,
+    questionCount: 0,
+    progressCount: 0,
+    storageArtifactCount: 0,
+    lastAction: "",
+  });
   const [messages, setMessages] = useState(() => {
     const startingMessages = [
       {
         speaker: "Academy",
-        text: "Welcome, Baylee. I can teach core AI workflows during onboarding and explain new Lofty updates as they ship.",
+        text: "Welcome, Shrey. I can teach core AI workflows during onboarding and explain new Lofty updates as they ship.",
       },
     ];
 
@@ -127,6 +157,92 @@ function App() {
     activeStep.cursorLabel;
   const currentUpdate = useMemo(() => releaseUpdates[2], []);
 
+  useEffect(() => {
+    refreshBackendStatus();
+    loadDemoProfiles();
+  }, []);
+
+  async function loadDemoProfiles() {
+    try {
+      const profiles = await fetchDemoProfiles();
+      setDemoProfiles(profiles);
+      const storedProfile = profiles.find(
+        (profile) => profile.email === storedDemoUserEmail,
+      );
+      if (storedProfile) {
+        setCurrentUser(storedProfile);
+      }
+    } catch (error) {
+      setBackendStatus((state) => ({ ...state, error: error.message }));
+    }
+  }
+
+  function demoLogin(profile) {
+    setCurrentUser(profile);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("agent-reborn-demo-user", profile.email);
+    }
+    setMessages((items) => [
+      ...items,
+      {
+        speaker: "Academy",
+        text: `Demo login active for ${profile.name}. Insforge profile role: ${profile.role}.`,
+      },
+    ]);
+  }
+
+  function demoLogout() {
+    setCurrentUser(null);
+    setTutorOpen(false);
+    setActiveTarget(null);
+    setLeadInsightOpen(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("agent-reborn-demo-user");
+    }
+  }
+
+  async function refreshBackendStatus(lastAction = "") {
+    if (!isInsforgeConfigured) return;
+
+    try {
+      const snapshot = await fetchBackendSnapshot();
+      setBackendLessons(snapshot.lessons);
+      setBackendStatus((state) => ({
+        ...state,
+        ...snapshot,
+        configured: true,
+        connected: true,
+        loading: false,
+        generating: false,
+        error: "",
+        lastAction: lastAction || state.lastAction,
+      }));
+    } catch (error) {
+      setBackendStatus((state) => ({
+        ...state,
+        connected: false,
+        loading: false,
+        generating: false,
+        error: error.message,
+      }));
+    }
+  }
+
+  function recordProgressFor(lesson, currentStep, completed = false) {
+    if (!lesson?.id || !isInsforgeConfigured) return;
+
+    recordLessonProgress({
+      lessonId: lesson.id,
+      currentStep,
+      userEmail: currentUser?.email,
+      completed,
+    })
+      .then(() => refreshBackendStatus("Progress saved to Insforge."))
+      .catch((error) => {
+        setBackendStatus((state) => ({ ...state, error: error.message }));
+      });
+  }
+
   function guideTo(target, options = {}) {
     setTutorOpen(true);
     setActiveTarget(target);
@@ -141,11 +257,19 @@ function App() {
     setLeadInsightOpen(false);
     setKnowledgeMode(false);
     setReleaseMode(false);
+    setActiveBackendLesson(null);
   }
 
   function nextStep() {
     if (!activeTarget) {
+      const firstLesson =
+        activeBackendLesson ||
+        findLessonBySourceType(backendLessons, "release_note") ||
+        backendLessons[0] ||
+        null;
+      setActiveBackendLesson(firstLesson);
       guideTo(activeStep.target);
+      recordProgressFor(firstLesson, lessonIndex);
       setMessages((items) => [
         ...items,
         { speaker: "Academy", text: activeStep.narration },
@@ -157,6 +281,7 @@ function App() {
     const nextStepData = lessonSteps[nextIndex];
     setLessonIndex(nextIndex);
     guideTo(nextStepData.target);
+    recordProgressFor(activeBackendLesson, nextIndex);
     setMessages((items) => [
       ...items,
       { speaker: "Academy", text: nextStepData.narration },
@@ -164,6 +289,8 @@ function App() {
   }
 
   function explainRelease() {
+    const releaseLesson = findLessonBySourceType(backendLessons, "release_note");
+    setActiveBackendLesson(releaseLesson);
     setKnowledgeMode(false);
     guideTo("updates");
     setReleaseMode(true);
@@ -171,12 +298,17 @@ function App() {
       ...items,
       {
         speaker: "Academy",
-        text: `I found Lofty 4.40. A high-impact update is ${currentUpdate.title}. ${currentUpdate.lesson}`,
+        text: releaseLesson
+          ? `Loaded "${releaseLesson.title}" from Insforge. ${currentUpdate.lesson}`
+          : `I found Lofty 4.40. A high-impact update is ${currentUpdate.title}. ${currentUpdate.lesson}`,
       },
     ]);
+    recordProgressFor(releaseLesson, 0);
   }
 
   function explainHelpTutorial() {
+    const helpLesson = findLessonBySourceType(backendLessons, "help_center_article");
+    setActiveBackendLesson(helpLesson);
     setKnowledgeMode(true);
     setReleaseMode(false);
     guideTo("updates");
@@ -187,12 +319,15 @@ function App() {
         text: `${helpCenterTutorial.liveSummary} For example: ${helpCenterTutorial.extractedSteps[2]}`,
       },
     ]);
+    recordProgressFor(helpLesson, 0);
   }
 
   function askQuestion(event) {
     event.preventDefault();
     const cleanQuestion = question.trim();
     if (!cleanQuestion) return;
+    const answerSummary =
+      "Her 59 reflects a new Facebook lead with a valid contact path, renter intent, and no outreach yet. Lofty shows the evidence before asking the agent to act.";
     setQuestion("");
     setLessonIndex(lessonSteps.findIndex((step) => step.target === "score-chip"));
     guideTo("score-chip", { showLeadInsight: true });
@@ -201,16 +336,70 @@ function App() {
       { speaker: "You", text: cleanQuestion },
       {
         speaker: "Academy",
-        text: "Great question. I paused the dashboard tour and moved to Emily's score. Her 59 reflects a new Facebook lead with a valid contact path, renter intent, and no outreach yet. The important trust point is that Lofty shows the evidence before asking the agent to act.",
+        text: `Great question. I paused the dashboard tour and moved to Emily's score. ${answerSummary}`,
       },
     ]);
+    recordQuestionEvent({
+      lessonId: activeBackendLesson?.id || backendLessons[0]?.id,
+      question: cleanQuestion,
+      answerSummary,
+      sourceScreen: "dashboard_lead_score",
+      userEmail: currentUser?.email,
+    })
+      .then(() => refreshBackendStatus("Q&A event logged to Insforge."))
+      .catch((error) => {
+        setBackendStatus((state) => ({ ...state, error: error.message }));
+      });
+  }
+
+  async function generateBackendLesson() {
+    if (!isInsforgeConfigured) return;
+
+    setBackendStatus((state) => ({
+      ...state,
+      generating: true,
+      error: "",
+      lastAction: "Calling generate-lesson Edge Function...",
+    }));
+
+    try {
+      const result = await generateLessonFromContent({
+        type: "help_center_article",
+        title: helpCenterTutorial.title,
+        source_url: helpCenterTutorial.url,
+        raw_content: helpCenterTutorial.extractedSteps.join("\n"),
+      });
+      setActiveBackendLesson(result.lesson);
+      setMessages((items) => [
+        ...items,
+        {
+          speaker: "Academy",
+          text: `Insforge generated and saved "${result.lesson.title}" from Help Center content.`,
+        },
+      ]);
+      await refreshBackendStatus("Edge Function generated and saved a lesson.");
+    } catch (error) {
+      setBackendStatus((state) => ({
+        ...state,
+        generating: false,
+        error: error.message,
+      }));
+    }
   }
 
   return (
     <main className="lofty-shell">
-      <TopNav onOpenAcademy={openAcademy} />
+      <TopNav currentUser={currentUser} onOpenAcademy={openAcademy} onLogout={demoLogout} />
+      {!currentUser ? (
+        <DemoLogin
+          profiles={demoProfiles}
+          backendConnected={backendStatus.connected}
+          onLogin={demoLogin}
+        />
+      ) : null}
       <div className="workspace">
         <Dashboard
+          userName={currentUser?.name || "Shrey Demo"}
           activeTarget={tutorOpen ? activeTarget : null}
           cursorLabel={activeCursorLabel}
           cursorPulse={cursorPulse}
@@ -229,12 +418,16 @@ function App() {
           knowledgeMode={knowledgeMode}
           currentUpdate={currentUpdate}
           helpCenterTutorial={helpCenterTutorial}
+          activeBackendLesson={activeBackendLesson}
+          backendStatus={backendStatus}
+          currentUser={currentUser}
           hasActiveTarget={Boolean(activeTarget)}
           setQuestion={setQuestion}
           onAskQuestion={askQuestion}
           onNextStep={nextStep}
           onExplainRelease={explainRelease}
           onExplainHelpTutorial={explainHelpTutorial}
+          onGenerateBackendLesson={generateBackendLesson}
           onClose={() => setTutorOpen(false)}
         />
       ) : null}
@@ -242,7 +435,7 @@ function App() {
   );
 }
 
-function TopNav({ onOpenAcademy }) {
+function TopNav({ currentUser, onOpenAcademy, onLogout }) {
   return (
     <header className="top-nav">
       <div className="brand">
@@ -264,12 +457,49 @@ function TopNav({ onOpenAcademy }) {
       <div className="nav-search" aria-label="Search">
         <span className="search-icon" />
       </div>
-      <div className="avatar" aria-label="Baylee profile" />
+      <button className="profile-button" onClick={onLogout} aria-label="Shrey profile">
+        <span className="avatar" />
+        {currentUser ? <span>{currentUser.role}</span> : null}
+      </button>
     </header>
   );
 }
 
+function DemoLogin({ profiles, backendConnected, onLogin }) {
+  const fallbackProfiles = profiles.length
+    ? profiles
+    : [
+        { email: "shrey@lofty.demo", name: "Shrey Demo", role: "agent" },
+        { email: "pm@agentreborn.demo", name: "Agent Reborn PM", role: "admin" },
+      ];
+
+  return (
+    <section className="demo-login" aria-label="Agent Reborn demo login">
+      <div>
+        <span>Agent Reborn</span>
+        <h2>Choose a demo login</h2>
+        <p>
+          This lightweight demo session uses Insforge profiles so judges can see
+          agent/admin roles without Google OAuth.
+        </p>
+      </div>
+      <div className="demo-login-actions">
+        {fallbackProfiles.map((profile) => (
+          <button key={profile.email} onClick={() => onLogin(profile)}>
+            <strong>{profile.role === "admin" ? "Admin" : "Agent"}</strong>
+            <span>{profile.name}</span>
+          </button>
+        ))}
+      </div>
+      <p className="demo-login-status">
+        Insforge profiles: {backendConnected ? "connected" : "local fallback"}
+      </p>
+    </section>
+  );
+}
+
 function Dashboard({
+  userName,
   activeTarget,
   cursorLabel,
   cursorPulse,
@@ -286,7 +516,7 @@ function Dashboard({
       <div className="dashboard-head">
         <div className="greeting">
           <span className="wave" aria-hidden="true">👋</span>
-          <h1>Good Evening, Baylee!</h1>
+          <h1>Good Evening, {userName.replace(" Demo", "")}!</h1>
           <span className="separator" />
           <button className="dashboard-select">My Dashboard</button>
         </div>
@@ -501,14 +731,20 @@ function AcademyTutor({
   knowledgeMode,
   currentUpdate,
   helpCenterTutorial,
+  activeBackendLesson,
+  backendStatus,
+  currentUser,
   hasActiveTarget,
   setQuestion,
   onAskQuestion,
   onNextStep,
   onExplainRelease,
   onExplainHelpTutorial,
+  onGenerateBackendLesson,
   onClose,
 }) {
+  const backendLessonTitle = activeBackendLesson?.title;
+
   return (
     <aside className="academy-panel" aria-label="Lofty Academy education layer">
       <div className="academy-header">
@@ -540,19 +776,29 @@ function AcademyTutor({
         <span>{knowledgeMode ? "Help Center extraction" : "Content-to-lesson engine"}</span>
         <strong>
           {knowledgeMode
-            ? helpCenterTutorial.title
+            ? backendLessonTitle || helpCenterTutorial.title
             : releaseMode
-              ? currentUpdate.title
+              ? backendLessonTitle || currentUpdate.title
               : "Lofty 4.40 ready to teach"}
         </strong>
         <p>
           {knowledgeMode
-            ? `Source: ${helpCenterTutorial.source}. Extracted ${helpCenterTutorial.extractedSteps.length} written steps into a live walkthrough.`
+            ? backendLessonTitle
+              ? `Loaded from Insforge. Validation: ${activeBackendLesson.validation_status}.`
+              : `Source: ${helpCenterTutorial.source}. Extracted ${helpCenterTutorial.extractedSteps.length} written steps into a live walkthrough.`
             : releaseMode
-              ? currentUpdate.value
+              ? backendLessonTitle
+                ? `Loaded from Insforge. Validation: ${activeBackendLesson.validation_status}.`
+                : currentUpdate.value
               : "Use the latest help article as source material for guided lessons."}
         </p>
       </div>
+
+      <BackendStatusCard
+        status={backendStatus}
+        currentUser={currentUser}
+        onGenerateBackendLesson={onGenerateBackendLesson}
+      />
 
       {knowledgeMode ? (
         <div className="extracted-steps">
@@ -589,6 +835,46 @@ function AcademyTutor({
         <button onClick={onExplainHelpTutorial}>Extract tutorial</button>
       </div>
     </aside>
+  );
+}
+
+function BackendStatusCard({ status, currentUser, onGenerateBackendLesson }) {
+  const statusLabel = status.loading
+    ? "Checking..."
+    : status.connected
+      ? "Connected"
+      : status.configured
+        ? "Needs attention"
+        : "Not configured";
+
+  return (
+    <div className="backend-card">
+      <div className="backend-card-head">
+        <span>Insforge backend</span>
+        <strong>{statusLabel}</strong>
+      </div>
+      <div className="backend-metrics">
+        <span>Lessons <strong>{status.lessonCount}</strong></span>
+        <span>Sources <strong>{status.sourceCount}</strong></span>
+        <span>Q&A <strong>{status.questionCount}</strong></span>
+        <span>Progress <strong>{status.progressCount}</strong></span>
+      </div>
+      <p>
+        Demo login: <strong>{currentUser?.email || "not selected"}</strong>
+      </p>
+      <p>
+        Storage artifacts: <strong>{status.storageArtifactCount}</strong>
+        {status.lastAction ? ` · ${status.lastAction}` : ""}
+      </p>
+      {status.error ? <p className="backend-error">{status.error}</p> : null}
+      <button
+        type="button"
+        onClick={onGenerateBackendLesson}
+        disabled={!status.configured || status.generating}
+      >
+        {status.generating ? "Generating..." : "Generate saved lesson"}
+      </button>
+    </div>
   );
 }
 

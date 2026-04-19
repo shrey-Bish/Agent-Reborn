@@ -1,10 +1,12 @@
-# Lofty Academy - Teammate Brief
+# Agent Reborn - Lofty Academy Teammate Brief
 
 ## One-Sentence Idea
 
 Lofty Academy is a continuous AI product education layer for Lofty: it helps new agents
 learn core AI workflows during onboarding, then keeps experienced agents current by
 turning release notes and Help Center tutorials into live in-product lessons.
+
+Team/project name: **Agent Reborn**.
 
 For the first demo, the dashboard should visually match the attached Lofty screenshot,
 and the release-update source should start with Lofty 4.40:
@@ -131,7 +133,7 @@ Needs:
 - Top navigation matching the screenshot: Lofty logo, CRM, Sales, Marketing, Content,
   Automation, Reporting, Marketplace, AI Copilots, search, avatar
 - Right utility rail
-- "Good Evening, Baylee!" greeting and Today's Priorities control
+- "Good Evening, Shrey!" greeting and Today's Priorities control
 - Onboarding mode banner
 - Need Keep In Touch widget
 - Today's Opportunities widget
