@@ -364,6 +364,7 @@ function App() {
   // Backend status
   const [backendCounts, setBackendCounts] = useState(null);
 
+
   /* ── refs ────────────────────── */
   const lessonStateRef = useRef("IDLE");
   const activeLessonRef = useRef(null);
@@ -1443,6 +1444,7 @@ function App() {
                 ))}
               </div>
             </div>
+
 
             {/* ── HELP CENTER VIEW ── */}
             <div className={`lp-view${lpView === "helpCenter" ? " active" : ""}`}>

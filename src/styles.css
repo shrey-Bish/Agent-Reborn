@@ -1134,3 +1134,103 @@ body.academy-active .release-features-grid {
   color: var(--blue); font-weight: 600;
 }
 
+/* ═══════════════════════════════
+   LESSON GENERATOR
+   ═══════════════════════════════ */
+
+.gen-section { margin-bottom: 14px; padding: 0 12px; }
+.gen-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--gray-500); text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.gen-input {
+  width: 100%; padding: 8px 10px;
+  border: 1.5px solid var(--gray-200); border-radius: 6px;
+  font-size: 13px; color: var(--gray-900); background: var(--gray-50);
+}
+.gen-input:focus { outline: none; border-color: #7c3aed; }
+.gen-textarea {
+  width: 100%; padding: 8px 10px;
+  border: 1.5px solid var(--gray-200); border-radius: 6px;
+  font-size: 12px; color: var(--gray-900); background: var(--gray-50);
+  resize: vertical; font-family: inherit; line-height: 1.5;
+}
+.gen-textarea:focus { outline: none; border-color: #7c3aed; }
+
+.gen-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: calc(100% - 24px); margin: 0 12px; padding: 10px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.gen-btn:hover { background: linear-gradient(135deg, #6d28d9, #5b21b6); }
+.gen-btn:disabled { opacity: 0.5; cursor: default; }
+
+.gen-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: genSpin 0.8s linear infinite;
+}
+@keyframes genSpin { to { transform: rotate(360deg); } }
+
+.gen-error {
+  margin: 10px 12px; padding: 8px 10px;
+  background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: 6px; font-size: 12px; color: #dc2626;
+}
+
+.gen-preview {
+  margin: 14px 12px 0; padding: 12px;
+  background: var(--gray-50); border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+}
+.gen-preview-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; font-size: 13px; font-weight: 700;
+  color: var(--gray-900);
+}
+.gen-ai-badge {
+  font-size: 10px; font-weight: 600;
+  background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
+  color: #6d28d9; padding: 2px 8px; border-radius: 4px;
+}
+
+.gen-steps { display: flex; flex-direction: column; gap: 8px; }
+.gen-step {
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.gen-step-num {
+  width: 20px; height: 20px; min-width: 20px;
+  background: #7c3aed; color: #fff; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; margin-top: 1px;
+}
+.gen-step-content { flex: 1; }
+.gen-step-narration {
+  font-size: 11px; color: var(--gray-700); line-height: 1.4;
+}
+.gen-step-target {
+  font-size: 10px; color: #7c3aed; margin-top: 2px;
+  font-family: monospace;
+}
+
+.gen-interrupts { margin-top: 10px; }
+.gen-interrupt-item {
+  font-size: 11px; color: var(--gray-500);
+  padding: 4px 0; border-top: 1px solid var(--gray-200);
+}
+.gen-interrupt-item strong { color: #7c3aed; }
+
+.gen-play-btn {
+  width: 100%; margin-top: 12px; padding: 10px;
+  background: var(--blue); color: #fff;
+  border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.gen-play-btn:hover { background: var(--indigo); }
