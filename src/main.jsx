@@ -30,6 +30,19 @@ const releaseUpdates = [
   },
 ];
 
+const helpCenterTutorial = {
+  title: "Aidentified Integration",
+  source: "Lofty Help Center",
+  url: "https://help.lofty.com/hc/en-us/articles/40537616665627-Aidentified-Integration",
+  extractedSteps: [
+    "Connect Aidentified to Lofty from the Connect menu, choose the Lofty logo, enter Lofty credentials, and submit.",
+    "Connect Aidentified to LinkedIn by selecting Connect > LinkedIn and following the page steps.",
+    "Send records to Lofty by selecting prospect checkboxes and choosing Add to Lofty.",
+  ],
+  liveSummary:
+    "I extracted this from the written Help Center tutorial. In the live product, I would convert each written instruction into a red box, an arrow, and a spoken step on the current screen.",
+};
+
 const lessonSteps = [
   {
     target: "updates",
@@ -58,19 +71,55 @@ const lessonSteps = [
 ];
 
 function App() {
-  const [activeTarget, setActiveTarget] = useState("updates");
+  const demoMode =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("demo")
+      : "";
+  const startWithHelpExtraction = demoMode === "help";
+  const startWithReleaseExplanation = demoMode === "release";
+
+  const [activeTarget, setActiveTarget] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation ? "updates" : null,
+  );
   const [lessonIndex, setLessonIndex] = useState(0);
   const [question, setQuestion] = useState("");
-  const [tutorOpen, setTutorOpen] = useState(false);
+  const [tutorOpen, setTutorOpen] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation,
+  );
   const [leadInsightOpen, setLeadInsightOpen] = useState(false);
   const [cursorPulse, setCursorPulse] = useState(0);
-  const [messages, setMessages] = useState([
-    {
-      speaker: "Academy",
-      text: "Welcome, Baylee. I will walk you through the AI signals on your dashboard and explain new Lofty updates as they ship.",
-    },
-  ]);
-  const [releaseMode, setReleaseMode] = useState(false);
+  const [knowledgeMode, setKnowledgeMode] = useState(startWithHelpExtraction);
+  const [messages, setMessages] = useState(() => {
+    const startingMessages = [
+      {
+        speaker: "Academy",
+        text: "Welcome, Baylee. I can teach core AI workflows during onboarding and explain new Lofty updates as they ship.",
+      },
+    ];
+
+    if (startWithHelpExtraction) {
+      return [
+        ...startingMessages,
+        {
+          speaker: "Academy",
+          text: `${helpCenterTutorial.liveSummary} For example: ${helpCenterTutorial.extractedSteps[2]}`,
+        },
+      ];
+    }
+
+    if (startWithReleaseExplanation) {
+      return [
+        ...startingMessages,
+        {
+          speaker: "Academy",
+          text: "I found Lofty 4.40 and can turn the release details into a guided in-product lesson.",
+        },
+      ];
+    }
+
+    return startingMessages;
+  });
+  const [releaseMode, setReleaseMode] = useState(startWithReleaseExplanation);
 
   const activeStep = lessonSteps[lessonIndex];
   const activeCursorLabel =
@@ -86,10 +135,24 @@ function App() {
   }
 
   function openAcademy() {
-    guideTo(activeTarget || activeStep.target);
+    setTutorOpen(true);
+    setActiveTarget(null);
+    setLessonIndex(0);
+    setLeadInsightOpen(false);
+    setKnowledgeMode(false);
+    setReleaseMode(false);
   }
 
   function nextStep() {
+    if (!activeTarget) {
+      guideTo(activeStep.target);
+      setMessages((items) => [
+        ...items,
+        { speaker: "Academy", text: activeStep.narration },
+      ]);
+      return;
+    }
+
     const nextIndex = Math.min(lessonIndex + 1, lessonSteps.length - 1);
     const nextStepData = lessonSteps[nextIndex];
     setLessonIndex(nextIndex);
@@ -101,6 +164,7 @@ function App() {
   }
 
   function explainRelease() {
+    setKnowledgeMode(false);
     guideTo("updates");
     setReleaseMode(true);
     setMessages((items) => [
@@ -108,6 +172,19 @@ function App() {
       {
         speaker: "Academy",
         text: `I found Lofty 4.40. A high-impact update is ${currentUpdate.title}. ${currentUpdate.lesson}`,
+      },
+    ]);
+  }
+
+  function explainHelpTutorial() {
+    setKnowledgeMode(true);
+    setReleaseMode(false);
+    guideTo("updates");
+    setMessages((items) => [
+      ...items,
+      {
+        speaker: "Academy",
+        text: `${helpCenterTutorial.liveSummary} For example: ${helpCenterTutorial.extractedSteps[2]}`,
       },
     ]);
   }
@@ -149,11 +226,15 @@ function App() {
           messages={messages}
           question={question}
           releaseMode={releaseMode}
+          knowledgeMode={knowledgeMode}
           currentUpdate={currentUpdate}
+          helpCenterTutorial={helpCenterTutorial}
+          hasActiveTarget={Boolean(activeTarget)}
           setQuestion={setQuestion}
           onAskQuestion={askQuestion}
           onNextStep={nextStep}
           onExplainRelease={explainRelease}
+          onExplainHelpTutorial={explainHelpTutorial}
           onClose={() => setTutorOpen(false)}
         />
       ) : null}
@@ -318,6 +399,10 @@ function GuidanceLayer({ activeTarget, cursorLabel, cursorPulse }) {
       <span className="ai-cursor-pulse" />
       <span className="ai-cursor-pointer" />
       <span className="ai-cursor-label">{cursorLabel || "Lofty Academy"}</span>
+      <span className={`tutorial-red-box red-box-${activeTarget}`} />
+      <span className={`tutorial-arrow arrow-${activeTarget}`}>
+        <span>{activeTarget === "score-chip" ? "2" : "1"}</span>
+      </span>
     </div>
   );
 }
@@ -413,19 +498,23 @@ function AcademyTutor({
   messages,
   question,
   releaseMode,
+  knowledgeMode,
   currentUpdate,
+  helpCenterTutorial,
+  hasActiveTarget,
   setQuestion,
   onAskQuestion,
   onNextStep,
   onExplainRelease,
+  onExplainHelpTutorial,
   onClose,
 }) {
   return (
-    <aside className="academy-panel" aria-label="Lofty Academy onboarding layer">
+    <aside className="academy-panel" aria-label="Lofty Academy education layer">
       <div className="academy-header">
         <div>
           <span className="eyebrow">Lofty Academy</span>
-          <h2>AI onboarding layer</h2>
+          <h2>AI education layer</h2>
         </div>
         <div className="academy-header-actions">
           <span className="live-pill">Live lesson</span>
@@ -434,7 +523,7 @@ function AcademyTutor({
       </div>
 
       <div className="lesson-card">
-        <p className="lesson-kicker">Explaining now</p>
+        <p className="lesson-kicker">{hasActiveTarget ? "Explaining now" : "Ready to explain"}</p>
         <h3>{activeStep.label}</h3>
         <p>{activeStep.narration}</p>
         <div className="lesson-progress" aria-label="Lesson progress">
@@ -448,10 +537,33 @@ function AcademyTutor({
       </div>
 
       <div className="release-card">
-        <span>Release-aware update layer</span>
-        <strong>{releaseMode ? currentUpdate.title : "Lofty 4.40 ready to explain"}</strong>
-        <p>{releaseMode ? currentUpdate.value : "Use the latest help article as source material for guided lessons."}</p>
+        <span>{knowledgeMode ? "Help Center extraction" : "Content-to-lesson engine"}</span>
+        <strong>
+          {knowledgeMode
+            ? helpCenterTutorial.title
+            : releaseMode
+              ? currentUpdate.title
+              : "Lofty 4.40 ready to teach"}
+        </strong>
+        <p>
+          {knowledgeMode
+            ? `Source: ${helpCenterTutorial.source}. Extracted ${helpCenterTutorial.extractedSteps.length} written steps into a live walkthrough.`
+            : releaseMode
+              ? currentUpdate.value
+              : "Use the latest help article as source material for guided lessons."}
+        </p>
       </div>
+
+      {knowledgeMode ? (
+        <div className="extracted-steps">
+          {helpCenterTutorial.extractedSteps.map((step, index) => (
+            <article key={step}>
+              <span>{index + 1}</span>
+              <p>{step}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       <div className="transcript">
         {messages.map((message, index) => (
@@ -472,8 +584,9 @@ function AcademyTutor({
       </form>
 
       <div className="academy-actions">
-        <button onClick={onNextStep}>Next step</button>
+        <button onClick={onNextStep}>{hasActiveTarget ? "Next step" : "Start lesson"}</button>
         <button onClick={onExplainRelease}>Explain update</button>
+        <button onClick={onExplainHelpTutorial}>Extract tutorial</button>
       </div>
     </aside>
   );

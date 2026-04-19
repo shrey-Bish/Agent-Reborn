@@ -2,22 +2,33 @@
 
 ## Winning Positioning
 
-**Lofty Academy** is a self-updating AI onboarding system for Lofty.
+**Lofty Academy** is a continuous AI product education layer for Lofty.
 
-New agents do not learn Lofty's AI features through PDFs, webinars, or stale help
-articles. They watch an AI tutor operate a Lofty-style CRM in front of them, explain
-why each AI signal matters, answer questions mid-lesson, and then resume the lesson.
+Lofty confirmed the pain is mixed: onboarding must be strong, but experienced agents
+also need ongoing value after product updates.
+
+New agents need the first product experience to build trust. Experienced agents need to
+notice, understand, and adopt new capabilities after Lofty ships them. Lofty Academy
+uses the same live guidance layer for both jobs: it operates a Lofty-style CRM, explains
+why each AI signal matters, answers questions mid-lesson, and resumes the flow.
 
 The scalable product story:
 
-> When Lofty ships a new feature, the product team uploads a structured release note.
-> Lofty Academy turns it into a guided lesson, validates the steps against a staging
-> CRM, and publishes it to the right users.
+> Lofty Academy starts as onboarding, but becomes a continuous update layer. Every
+> release note or Help Center tutorial can become an interactive in-product lesson, so
+> both new and experienced agents understand Lofty features at the moment they need them.
 
-Primary release-note source for the demo:
+Content sources for the demo:
 
 - Lofty Help Center release notes, starting with Lofty 4.40:
   `https://help.lofty.com/hc/en-us/articles/48927271391259-Feature-Updates-for-Lofty-4-40`
+- Lofty Help Center documentation:
+  `https://help.lofty.com/hc/en-us`
+- First written tutorial extraction example:
+  `https://help.lofty.com/hc/en-us/articles/40537616665627-Aidentified-Integration`
+
+Release notes and Help Center articles are both source content for the same
+lesson-generation pipeline.
 
 This directly targets the sponsor prompt:
 
@@ -29,18 +40,18 @@ This directly targets the sponsor prompt:
 
 ## Why This Can Win
 
-The strongest product insight is trust. Lofty already has AI capabilities, but new
-agents may not understand what the AI is doing, where to find it, or whether to trust
-it. Lofty Academy turns onboarding into an active demonstration:
+The strongest product insight is continuous trust. Lofty already has AI capabilities,
+but agents may not understand what the AI is doing, where to find it, or why a new
+release matters. Lofty Academy turns product education into an active demonstration:
 
 1. The AI shows the dashboard.
 2. It explains "Today's Opportunities" and lead scores.
 3. The user interrupts: "Wait, what is a lead score?"
 4. The AI pauses, navigates to a lead profile, explains the score, and returns.
-5. The user sees a summary of what they learned.
+5. Later, a release note or Help Center article becomes another guided lesson.
 
 That Q&A interrupt is the "aha" moment. It proves this is not just a video, chatbot,
-or static checklist. It is contextual onboarding that teaches inside the product.
+or static checklist. It is contextual product education that teaches inside the product.
 
 ## Product Scope
 
@@ -50,8 +61,9 @@ or static checklist. It is contextual onboarding that teaches inside the product
 - An embedded Lofty Academy tutor panel
 - One polished onboarding lesson
 - One interruptible Q&A moment
+- One Help Center article converted into a numbered red-box / arrow walkthrough
 - Text transcript plus ElevenLabs voice output
-- A release-note-to-lesson generator screen
+- A content-to-lesson generator screen
 - Insforge as the primary deployed backend
 - A live deployed app, not only localhost
 - A 2-minute demo video focused on the aha moment
@@ -100,10 +112,10 @@ prove that.
 ## Architecture
 
 ```txt
-Lofty release note / PM brief
+Lofty release note / Help Center article / PM brief
         |
         v
-Release Lesson Generator
+Content-to-Lesson Engine
         |
         v
 Generated lesson JSON
@@ -115,7 +127,7 @@ Lesson Validator against CRM sandbox / staging
 Lofty Academy Tutor
         |
         v
-New user watches AI operate CRM + asks questions
+New or experienced user watches AI operate CRM + asks questions
 ```
 
 ### User-Facing Runtime
@@ -134,11 +146,16 @@ New user watches AI operate CRM + asks questions
 
 This is the scalability layer the judges care about.
 
-1. Product team uploads a release note in a preferred structured format.
-2. AI converts the release into an onboarding lesson.
+1. Product team uploads a release note, Help Center article, or PM brief.
+2. AI converts the content into a guided in-product lesson.
 3. The lesson is validated against a sandbox/staging CRM.
 4. The system reports pass/fail and missing UI anchors.
 5. Validated lessons are published to relevant users.
+
+This same pipeline handles both release notes and existing Lofty Help Center tutorials:
+ingest source content, extract task steps and UI labels, map each step to a product
+anchor, render numbered red boxes/arrows with cursor movement and narration, and let the
+user ask questions while the lesson is running.
 
 ## Insforge Backend Plan
 
@@ -160,8 +177,8 @@ Use these four so the side-track story is clear:
 1. **Auth**
    - Demo login as `sarah@lofty.demo`
    - Role options: `agent` and `admin`
-   - Agent sees the onboarding lesson
-   - Admin sees the Release Lesson Generator
+   - Agent sees the guided lesson
+   - Admin sees the Content-to-Lesson Engine
 
 2. **Postgres Database**
    - Store generated lessons
@@ -422,9 +439,21 @@ Also build the Clicky-like interaction pattern, but scoped to Lofty:
 - A blue AI cursor overlay that lives inside the CRM dashboard, not the OS desktop
 - Smooth movement to the card or field being explained
 - Highlight ring around the target element
+- Numbered red boxes and arrows for article-style tutorials, matching how users already
+  see support documentation screenshots
 - Small click pulse when the tutor "opens" or selects something
 - Voice narration synchronized with cursor movement
 - Typed Q&A first, optional microphone input later
+
+Add a content-to-lesson demo:
+
+- Use the Aidentified Integration article as the first example.
+- Show the model extracting written steps such as connecting Lofty, connecting LinkedIn,
+  and sending selected records to Lofty.
+- Convert those extracted steps into live dashboard callouts with a red box, arrow,
+  AI cursor, and spoken/text explanation.
+- Position this as proof that Lofty Academy can reuse existing Lofty documentation,
+  not only new release notes.
 
 Important positioning:
 
@@ -472,7 +501,7 @@ Interrupt:
 
 This is the demo's core proof.
 
-### Phase 5 - Release Lesson Generator
+### Phase 5 - Content-to-Lesson Generator
 
 Add an internal admin page:
 
@@ -507,7 +536,7 @@ Suggested timing:
 - **0:15-0:35:** Log in to the live app and start a saved dashboard lesson.
 - **0:35-1:10:** User asks "What is lead score?" AI pauses, navigates, explains, returns.
 - **1:10-1:30:** Show lesson summary and trust-building explanation.
-- **1:30-1:55:** Show release-note generator creating and saving a new lesson.
+- **1:30-1:55:** Show content-to-lesson generator creating and saving a new lesson.
 - **1:55-2:00:** Show backend status or persisted lesson count to prove Insforge usage.
 
 ## Judging Criteria Mapping
@@ -522,11 +551,12 @@ The bottleneck is not only training. It is AI adoption.
 
 ### The Solution
 
-Lofty Academy is an embedded AI onboarding tutor. It operates the CRM, narrates what it
-is doing, handles user questions in context, and generates new lessons from release
-notes so onboarding stays current as Lofty evolves. Insforge powers auth, lesson
-storage, release-note persistence, progress tracking, Q&A logging, and backend lesson
-generation.
+Lofty Academy is a continuous AI product education layer. It operates the CRM, narrates
+what it is doing, handles user questions in context, and generates new lessons from
+release notes and existing Help Center tutorials so learning stays current as Lofty
+evolves. It can turn written documentation into live red-box / arrow callouts with
+cursor movement and narration. Insforge powers auth, lesson storage, release/tutorial
+persistence, progress tracking, Q&A logging, and backend lesson generation.
 
 ### The Business Case
 
@@ -649,15 +679,14 @@ Build our own controlled web app instead.
 
 ## Final Build Priority
 
-1. Mock CRM and tutor panel
-2. Insforge Auth + Postgres persistence
-3. Product-scoped AI cursor/highlight layer
-4. Golden path lesson
-5. Interrupt question flow with Q&A event logging
-6. Release-note generator saved through Insforge
-7. Live deployment
-8. ElevenLabs voice output
-9. Demo polish and recording
-10. Slides / written rationale
+1. Lofty-style CRM sandbox
+2. Live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt
+3. Insforge Auth + Postgres persistence
+4. Content-to-lesson demo saved through Insforge
+5. Golden path lesson
+6. Live deployment
+7. ElevenLabs voice output
+8. Demo polish and recording
+9. Slides / written rationale
 
 If only one thing is perfect, make the interrupt demo perfect.

@@ -2,41 +2,50 @@
 
 ## One-Sentence Idea
 
-Lofty Academy is an AI onboarding tutor that teaches new real estate agents by operating
-a Lofty-style CRM in front of them, explaining AI features, answering questions mid-flow,
-and generating new lessons from future product release notes.
+Lofty Academy is a continuous AI product education layer for Lofty: it helps new agents
+learn core AI workflows during onboarding, then keeps experienced agents current by
+turning release notes and Help Center tutorials into live in-product lessons.
 
 For the first demo, the dashboard should visually match the attached Lofty screenshot,
 and the release-update source should start with Lofty 4.40:
 
 `https://help.lofty.com/hc/en-us/articles/48927271391259-Feature-Updates-for-Lofty-4-40`
 
+We should also use Lofty's existing Help Center as base knowledge:
+
+`https://help.lofty.com/hc/en-us`
+
+First tutorial extraction example:
+
+`https://help.lofty.com/hc/en-us/articles/40537616665627-Aidentified-Integration`
+
+Core pitch:
+
+> Lofty Academy starts as onboarding, but becomes a continuous update layer. Every
+> release note or Help Center tutorial can become an interactive in-product lesson, so
+> both new and experienced agents understand Lofty features at the moment they need them.
+
 ## What We Are Building
 
 We are building a demo web app, not automating the real Lofty production account.
 
-The demo has five main pieces:
+The demo has four product pillars:
 
-1. **Mock Lofty CRM**
-   A realistic CRM interface with dashboard, Today's Opportunities, People, lead score,
-   and lead profile details.
+1. **Lofty-style CRM sandbox**
+   A controlled, realistic CRM environment with dashboard, Today's Opportunities, lead
+   scores, and supporting CRM details.
 
-2. **Lofty Academy Tutor**
-   A right-side onboarding assistant that narrates a lesson, tracks progress, and lets
-   the user ask a question while the lesson is running.
+2. **Live AI guidance layer**
+   The user-facing magic: tutor panel, AI cursor, highlights, numbered red boxes/arrows,
+   Q&A interrupt, lesson progress, and voice output.
 
-3. **AI Cursor / Guidance Layer**
-   A Clicky-like interaction pattern scoped to the Lofty web app: the AI can move a
-   blue cursor inside the CRM, highlight cards, pulse-click targets, and speak while it
-   guides the user.
+3. **Content-to-lesson engine**
+   Release notes and Help Center tutorials are both source content. The system extracts
+   key steps and turns them into guided in-product lessons.
 
-4. **Release Lesson Generator**
-   An internal admin screen where a PM pastes a structured release note and the system
-   generates a new guided onboarding lesson.
-
-5. **Insforge Backend**
-   The real backend for auth, database persistence, release-note storage, lesson
-   generation, progress tracking, and Q&A logging.
+4. **Insforge backend**
+   The real backend for auth, persistence, release/tutorial storage, lesson state, Q&A
+   logging, and publish flow.
 
 ## Why We Are Not Using Real Lofty For The Demo
 
@@ -140,11 +149,11 @@ Needs:
 - Recent activity: viewed listings, returned to site, saved search
 - Current Smart Plan
 
-### Release Lesson Generator
+### Content-to-Lesson Generator
 
 Needs:
 
-- Text area with structured release note JSON
+- Text area with structured release note JSON or Help Center article content
 - Button: Generate Lesson
 - Generated lesson preview
 - Save generated lesson to Insforge Postgres
@@ -177,17 +186,21 @@ Needs:
 
 ## Judging Criteria Cheat Sheet
 
-**Problem:** New agents do not activate because onboarding is passive and AI features
-are hard to understand or trust.
+**Problem:** Lofty has a mixed education bottleneck: first-time onboarding must build
+trust, while experienced agents also need ongoing value after product updates.
 
-**Solution:** AI tutor operates the CRM, explains AI decisions, answers questions in
-context, and auto-generates lessons from release notes. Insforge powers auth, lesson
-storage, release persistence, progress tracking, and Q&A logging.
+**Solution:** A continuous AI product education layer operates the CRM, explains AI
+decisions, answers questions in context, and turns release notes or Help Center tutorials
+into guided lessons. Insforge powers auth, lesson storage, release/tutorial persistence,
+progress tracking, and Q&A logging.
 
 **Clicky comparison:** We borrow the interaction model of talking, pointing, and guiding,
 but we do not build a general desktop screen buddy. Our cursor/highlight layer is scoped
 inside Lofty and connected to onboarding state, CRM concepts, release notes, and lesson
 progress.
+
+**Help Center extraction:** Supporting proof inside the content-to-lesson engine. Existing
+Lofty tutorials become live numbered red boxes, arrows, cursor movement, and narration.
 
 **Business case:** Faster activation, fewer support tickets, higher AI feature adoption,
 better retention, premium brokerage onboarding.
@@ -201,15 +214,13 @@ rollout, triggered lessons for users who have not adopted AI features.
 
 ## Build Priorities
 
-1. Make the mock CRM look credible.
-2. Wire Insforge Auth and Postgres persistence.
-3. Add the product-scoped AI cursor/highlight layer.
-4. Make the tutor flow smooth.
-5. Make the interrupt question work and log it.
-6. Add release generator for scalability.
-7. Deploy the live app.
-8. Add ElevenLabs voice output if time allows.
-9. Polish and record the demo.
+1. Make the Lofty-style CRM sandbox look credible.
+2. Build the live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt.
+3. Wire Insforge Auth/Postgres persistence and log lesson/Q&A state.
+4. Build the content-to-lesson demo using Lofty 4.40 and the Aidentified Help Center article.
+5. Deploy the live app.
+6. Add ElevenLabs voice output if time allows.
+7. Polish and record the demo.
 
 ## Things To Avoid
 
@@ -224,11 +235,12 @@ rollout, triggered lessons for users who have not adopted AI features.
 
 Use this line often:
 
-> Lofty Academy is not a hardcoded tutorial library. It is a release-aware onboarding
-> system: every new Lofty feature can become an interactive, validated, in-product lesson.
+> Lofty Academy is not a hardcoded tutorial library. It is a continuous product
+> education layer: every new Lofty feature or tutorial can become an interactive,
+> validated, in-product lesson.
 
 For Clicky comparisons:
 
-> Clicky is a general screen companion. Lofty Academy is a product-native onboarding
-> and release education layer that uses a similar talk-and-guide interaction, but only
-> to help agents understand and trust Lofty's AI workflows.
+> Clicky is a general screen companion. Lofty Academy is a product-native education
+> layer that uses a similar talk-and-guide interaction, but only to help agents
+> understand and trust Lofty's AI workflows.
