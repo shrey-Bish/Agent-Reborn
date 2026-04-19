@@ -1,1565 +1,837 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
-import {
-  fetchBackendSnapshot,
-  fetchDemoProfiles,
-  findLessonBySourceType,
-  generateLessonFromContent,
-  isInsforgeConfigured,
-  publishLesson,
-  recordLessonProgress,
-  recordQuestionEvent,
-  synthesizeLessonSpeech,
-} from "./insforgeBackend";
 
-const releaseUpdates = [
+/* ─────────────────────────────────────────
+   STATIC DATA
+───────────────────────────────────────── */
+const COURSES = [
   {
-    title: "Transaction Role Default Person Setting",
-    lesson: "Admins and agents can set default people for transaction roles so new transactions automatically assign the right vendor, agent, or lender.",
-    value: "Removes repetitive setup and reduces unassigned transaction tasks.",
+    name: "CRM Dashboard Fundamentals",
+    meta: "3 of 3 lessons",
+    status: "done",
+    lessons: [
+      { name: "Navigating the Dashboard", status: "done" },
+      { name: "Understanding Lead Cards", status: "done" },
+      { name: "Daily Priorities Workflow", status: "done" },
+    ],
   },
   {
-    title: "Transaction Lead Portal",
-    lesson: "Agents can share selected transaction stages and documents with leads through the Closely app.",
-    value: "Builds transparency while keeping the agent in control of what clients can see.",
+    name: "Lead Management Mastery",
+    meta: "1 of 3 lessons",
+    status: "active",
+    lessons: [
+      { name: "Importing & Tagging Leads", status: "done" },
+      { name: "Lead Scoring Explained", status: "active" },
+      { name: "Follow-Up Strategies", status: "todo" },
+    ],
   },
   {
-    title: "Sales Agent: Digital Employee",
-    lesson: "Sales Agent is now presented as a Digital Employee that agents can hire from a marketplace.",
-    value: "Makes AI feel like a concrete teammate with role, skills, and performance stats.",
+    name: "Sales Pipeline & Transactions",
+    meta: "0 of 3 lessons",
+    status: "todo",
+    lessons: [
+      { name: "Creating a Pipeline Stage", status: "todo" },
+      { name: "Managing Deadlines", status: "todo" },
+      { name: "Closing & Archiving Deals", status: "todo" },
+    ],
   },
   {
-    title: "Sales Agent: Smarter AI Conversations",
-    lesson: "Sales Agent now considers more lead context, waits when needed, avoids overlapping with agent outreach, and changes strategy when a lead stops responding.",
-    value: "This is a trust feature: the AI explains when it chooses not to message.",
+    name: "Marketing & Automation Tools",
+    meta: "0 of 3 lessons",
+    status: "todo",
+    lessons: [
+      { name: "Email Campaign Basics", status: "todo" },
+      { name: "Setting Up Automations", status: "todo" },
+      { name: "Drip Sequences & Triggers", status: "todo" },
+    ],
   },
   {
-    title: "Smart Plan Performance",
-    lesson: "Smart Plans now include a Performance tab with email and text analytics inside the edit workflow.",
-    value: "Agents can understand which automated follow-ups are working without leaving the plan builder.",
+    name: "AI Copilots & Smart Features",
+    meta: "0 of 3 lessons",
+    status: "todo",
+    lessons: [
+      { name: "Intro to AI Copilots", status: "todo" },
+      { name: "Smart Lead Predictions", status: "todo" },
+      { name: "AI-Powered Responses", status: "todo" },
+    ],
   },
 ];
 
-const helpCenterTutorial = {
-  title: "Aidentified Integration",
-  source: "Lofty Help Center",
-  url: "https://help.lofty.com/hc/en-us/articles/40537616665627-Aidentified-Integration",
-  extractedSteps: [
-    "Connect Aidentified to Lofty from the Connect menu, choose the Lofty logo, enter Lofty credentials, and submit.",
-    "Connect Aidentified to LinkedIn by selecting Connect > LinkedIn and following the page steps.",
-    "Send records to Lofty by selecting prospect checkboxes and choosing Add to Lofty.",
-  ],
-  liveSummary:
-    "I extracted this from the written Help Center tutorial. In the live product, I would convert each written instruction into a red box, an arrow, and a spoken step on the current screen.",
-};
-
-const studioReleaseTemplate = {
-  feature_name: "AI Follow-Up Suggestions",
-  target_users: ["new agents", "team admins"],
-  goal: "Teach agents how to review and send AI-suggested follow-ups.",
-  entry_point: "People > Lead Profile > Follow-Up Suggestions",
-  user_value: "Helps agents respond faster to warm leads.",
-  key_actions: [
-    "open a high-score lead",
-    "review the AI follow-up suggestion",
-    "edit the message",
-    "send or schedule the follow-up",
-  ],
-  trust_notes: [
-    "explain why the AI suggested this lead",
-    "show that the agent can edit before sending",
-    "make clear that AI does not send without approval",
-  ],
-  success_metric: "First AI follow-up reviewed or sent",
-};
-
-const lessonSteps = [
+const RELEASES = [
   {
-    target: "touch",
-    label: "Need Keep In Touch",
-    cursorLabel: "Follow-up basics",
-    narration: "This widget is the low-friction starting point. Agent Reborn explains the daily follow-up habits a new agent needs before moving into AI signals.",
+    version: "v3.2",
+    name: "Spring 2025 Update",
+    date: "April 2025 · 3 lessons",
+    badgeColor: null,
+    lessons: [
+      { name: "New AI Dashboard Widgets", status: "todo" },
+      { name: "Bulk Lead Actions", status: "todo" },
+      { name: "Updated Reporting Views", status: "todo" },
+    ],
   },
   {
-    target: "opportunities",
-    label: "Today's Opportunities",
-    cursorLabel: "AI signals",
-    narration: "These are AI-prioritized signals. During onboarding, we explain what High Interest, Likely Sellers, and Back to Site mean before asking the agent to act.",
+    version: "v3.0",
+    name: "AI Copilots Launch",
+    date: "February 2025 · 3 lessons",
+    badgeColor: null,
+    lessons: [
+      { name: "Intro to AI Copilots", status: "done" },
+      { name: "Copilot Lead Suggestions", status: "done" },
+      { name: "Smart Reply Drafts", status: "done" },
+    ],
   },
   {
-    target: "opportunity-stats",
-    label: "Opportunity Signal Types",
-    cursorLabel: "Signal types",
-    narration: "High Interest, Likely Sellers, and Back to Site are not random dashboard numbers. They are the first AI concepts a new agent needs to understand and trust.",
+    version: "v2.5",
+    name: "Automation Overhaul",
+    date: "October 2024 · 3 lessons",
+    badgeColor: "var(--blue)",
+    lessons: [
+      { name: "Trigger-Based Workflows", status: "done" },
+      { name: "Drip Campaign Builder", status: "done" },
+      { name: "Automation Analytics", status: "done" },
+    ],
   },
   {
-    target: "score-chip",
-    label: "Lead Score",
-    cursorLabel: "Lead score 59",
-    narration: "Lead score is Lofty's quick read on how ready a lead may be. The tutor can pause the lesson and show the evidence behind the number.",
+    version: "v2.0",
+    name: "Pipeline Redesign",
+    date: "June 2024 · 3 lessons",
+    badgeColor: "var(--blue)",
+    lessons: [
+      { name: "New Pipeline Stages UI", status: "done" },
+      { name: "Drag-and-Drop Deals", status: "done" },
+      { name: "Transaction Milestones", status: "done" },
+    ],
+  },
+  {
+    version: "v1.5",
+    name: "Lead Scoring Engine",
+    date: "January 2024 · 3 lessons",
+    badgeColor: "var(--gray-500)",
+    lessons: [
+      { name: "How Scores Are Calculated", status: "done" },
+      { name: "Score Thresholds & Alerts", status: "done" },
+      { name: "Reviewing Score History", status: "done" },
+    ],
   },
 ];
 
-const cursorLabelsByTarget = {
-  updates: "Release notes",
-};
+const NAV_ITEMS = [
+  { icon: "📚", label: "Courses",       badge: "5",  badgeColor: null,            view: "courses"  },
+  { icon: "🚀", label: "Releases",      badge: "5",  badgeColor: "var(--green)",  view: "releases" },
+  { icon: "🏆", label: "Achievements",  badge: null, badgeColor: null,            view: null       },
+  { icon: "📢", label: "Announcements", badge: "2",  badgeColor: "var(--amber)",  view: null       },
+];
 
+const INITIAL_CHAT = [
+  {
+    type: "ai",
+    text: "Welcome to the Dashboard lesson! I'll walk you through each card. Watch for my highlights — they show exactly what to click.",
+  },
+  {
+    type: "user",
+    text: 'What does the "Today\'s New Leads" card show?',
+  },
+  {
+    type: "ai",
+    text: "Great question! It shows leads registered today who haven't been contacted yet. The score bubble (like 59) is their lead score — higher means more engaged.",
+  },
+  {
+    type: "ai",
+    text: "Next, look at the <strong>Opportunities card</strong> in the top-right. It tracks high-interest buyers and likely sellers. Ready to move on?",
+    html: true,
+  },
+];
+
+/* ─────────────────────────────────────────
+   APP
+───────────────────────────────────────── */
 function App() {
-  const demoMode =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("demo")
-      : "";
-  const startWithHelpExtraction = demoMode === "help";
-  const startWithReleaseExplanation = demoMode === "release";
-  const storedDemoUserEmail =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem("agent-reborn-demo-user")
-      : "";
+  const [academyOn,       setAcademyOn]       = useState(false);
+  const [voiceOn,         setVoiceOn]         = useState(false);
+  const [isListening,     setIsListening]     = useState(false);
+  const [lpView,          setLpView]          = useState("main");   // 'main' | 'courses' | 'releases'
+  const [lpActiveNav,     setLpActiveNav]     = useState(0);
+  const [expandedCourse,  setExpandedCourse]  = useState(null);
+  const [expandedRelease, setExpandedRelease] = useState(null);
+  const [chatMessages,    setChatMessages]    = useState(INITIAL_CHAT);
+  const [chatInput,       setChatInput]       = useState("");
 
-  const [activeTarget, setActiveTarget] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation ? "updates" : null,
-  );
-  const [lessonIndex, setLessonIndex] = useState(0);
-  const [resumeLessonIndex, setResumeLessonIndex] = useState(null);
-  const [question, setQuestion] = useState("");
-  const [academyMode, setAcademyMode] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation,
-  );
-  const [topBarVisible, setTopBarVisible] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation,
-  );
-  const [leftPanelOpen, setLeftPanelOpen] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation,
-  );
-  const [rightPanelOpen, setRightPanelOpen] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation,
-  );
-  const [panelContentVisible, setPanelContentVisible] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation,
-  );
-  const [viewportWidth, setViewportWidth] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440,
-  );
-  const [tutorOpen, setTutorOpen] = useState(
-    startWithHelpExtraction || startWithReleaseExplanation,
-  );
-  const [leadInsightOpen, setLeadInsightOpen] = useState(false);
-  const [cursorPulse, setCursorPulse] = useState(0);
-  const [knowledgeMode, setKnowledgeMode] = useState(startWithHelpExtraction);
-  const [backendLessons, setBackendLessons] = useState([]);
-  const [activeBackendLesson, setActiveBackendLesson] = useState(null);
-  const [demoProfiles, setDemoProfiles] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [studioSourceText, setStudioSourceText] = useState(() =>
-    JSON.stringify(studioReleaseTemplate, null, 2),
-  );
-  const [studioResult, setStudioResult] = useState(null);
-  const [studioError, setStudioError] = useState("");
-  const [studioSaving, setStudioSaving] = useState(false);
-  const [studioPublishing, setStudioPublishing] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState({
-    loading: false,
-    label: "Voice ready",
-    error: "",
-  });
-  const [backendStatus, setBackendStatus] = useState({
-    configured: isInsforgeConfigured,
-    connected: false,
-    loading: isInsforgeConfigured,
-    generating: false,
-    error: isInsforgeConfigured ? "" : "Add Insforge env vars to enable live backend proof.",
-    lessonCount: 0,
-    sourceCount: 0,
-    questionCount: 0,
-    progressCount: 0,
-    storageArtifactCount: 0,
-    lastAction: "",
-  });
-  const [messages, setMessages] = useState(() => {
-    const startingMessages = [
-      {
-        speaker: "Academy",
-        text: "Welcome, Shrey. I can teach core AI workflows during onboarding and explain new Lofty updates as they ship.",
-      },
-    ];
+  const chatAreaRef      = useRef(null);
+  const listeningTimer   = useRef(null);
+  const chatTextareaRef  = useRef(null);
 
-    if (startWithHelpExtraction) {
-      return [
-        ...startingMessages,
-        {
-          speaker: "Academy",
-          text: `${helpCenterTutorial.liveSummary} For example: ${helpCenterTutorial.extractedSteps[2]}`,
-        },
-      ];
-    }
-
-    if (startWithReleaseExplanation) {
-      return [
-        ...startingMessages,
-        {
-          speaker: "Academy",
-          text: "I found Lofty 4.40 and can turn the release details into a guided in-product lesson.",
-        },
-      ];
-    }
-
-    return startingMessages;
-  });
-  const [releaseMode, setReleaseMode] = useState(startWithReleaseExplanation);
-  const academyTimers = useRef([]);
-
-  const activeStep = lessonSteps[lessonIndex];
-  const activeCursorLabel =
-    cursorLabelsByTarget[activeTarget] ||
-    lessonSteps.find((step) => step.target === activeTarget)?.cursorLabel ||
-    activeStep.cursorLabel;
-  const currentUpdate = useMemo(() => releaseUpdates[2], []);
-  const academyScale = Math.min(1, (viewportWidth * 0.54) / 1440);
-
+  /* keep body class in sync */
   useEffect(() => {
-    refreshBackendStatus();
-    loadDemoProfiles();
+    document.body.classList.toggle("academy-active", academyOn);
+    return () => document.body.classList.remove("academy-active");
+  }, [academyOn]);
 
-    function handleResize() {
-      setViewportWidth(window.innerWidth);
+  /* auto-scroll chat */
+  useEffect(() => {
+    if (chatAreaRef.current) {
+      chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
     }
+  }, [chatMessages]);
 
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      clearAcademyTimers();
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  function clearAcademyTimers() {
-    academyTimers.current.forEach((timer) => window.clearTimeout(timer));
-    academyTimers.current = [];
+  function toggleAcademy() {
+    setAcademyOn(v => !v);
   }
 
-  function scheduleAcademyStep(callback, delay) {
-    const timer = window.setTimeout(callback, delay);
-    academyTimers.current.push(timer);
-  }
-
-  async function loadDemoProfiles() {
-    try {
-      const profiles = await fetchDemoProfiles();
-      setDemoProfiles(profiles);
-      const storedProfile = profiles.find(
-        (profile) => profile.email === storedDemoUserEmail,
-      );
-      if (storedProfile) {
-        setCurrentUser(storedProfile);
-      }
-    } catch (error) {
-      setBackendStatus((state) => ({ ...state, error: error.message }));
+  function handleBack() {
+    if (lpView !== "main") {
+      setLpView("main");
+    } else if (academyOn) {
+      setAcademyOn(false);
     }
   }
 
-  function demoLogin(profile) {
-    setCurrentUser(profile);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("agent-reborn-demo-user", profile.email);
-    }
-    setMessages((items) => [
-      ...items,
-      {
-        speaker: "Academy",
-        text: `Demo login active for ${profile.name}. Insforge profile role: ${profile.role}.`,
-      },
-    ]);
+  function toggleCourse(idx) {
+    setExpandedCourse(prev => (prev === idx ? null : idx));
   }
 
-  function demoLogout() {
-    setCurrentUser(null);
-    closeAcademyMode();
-    setTutorOpen(false);
-    setActiveTarget(null);
-    setLeadInsightOpen(false);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("agent-reborn-demo-user");
-    }
+  function toggleRelease(idx) {
+    setExpandedRelease(prev => (prev === idx ? null : idx));
   }
 
-  async function refreshBackendStatus(lastAction = "") {
-    if (!isInsforgeConfigured) return;
-
-    try {
-      const snapshot = await fetchBackendSnapshot();
-      setBackendLessons(snapshot.lessons);
-      setBackendStatus((state) => ({
-        ...state,
-        ...snapshot,
-        configured: true,
-        connected: true,
-        loading: false,
-        generating: false,
-        error: "",
-        lastAction: lastAction || state.lastAction,
-      }));
-    } catch (error) {
-      setBackendStatus((state) => ({
-        ...state,
-        connected: false,
-        loading: false,
-        generating: false,
-        error: error.message,
-      }));
-    }
+  function toggleVoiceMode() {
+    setVoiceOn(v => {
+      if (v && isListening) stopListening();
+      return !v;
+    });
   }
 
-  function recordProgressFor(lesson, currentStep, completed = false) {
-    if (!lesson?.id || !isInsforgeConfigured) return;
-
-    recordLessonProgress({
-      lessonId: lesson.id,
-      currentStep,
-      userEmail: currentUser?.email,
-      completed,
-    })
-      .then(() => refreshBackendStatus("Progress saved to Insforge."))
-      .catch((error) => {
-        setBackendStatus((state) => ({ ...state, error: error.message }));
-      });
-  }
-
-  function guideTo(target, options = {}) {
-    setTutorOpen(true);
-    openAcademyMode();
-    setActiveTarget(target);
-    setLeadInsightOpen(target === "score-chip" || options.showLeadInsight === true);
-    setCursorPulse((value) => value + 1);
-  }
-
-  function openAcademyMode() {
-    clearAcademyTimers();
-    setAcademyMode(true);
-    setTutorOpen(true);
-    setTopBarVisible(true);
-    setPanelContentVisible(false);
-
-    scheduleAcademyStep(() => {
-      setLeftPanelOpen(true);
-      setRightPanelOpen(true);
-    }, 120);
-
-    scheduleAcademyStep(() => {
-      setPanelContentVisible(true);
-    }, 500);
-  }
-
-  function openAcademy() {
-    openAcademyMode();
-    setActiveTarget(null);
-    setLessonIndex(0);
-    setResumeLessonIndex(null);
-    setLeadInsightOpen(false);
-    setKnowledgeMode(false);
-    setReleaseMode(false);
-    setActiveBackendLesson(null);
-  }
-
-  function closeAcademyMode() {
-    clearAcademyTimers();
-    setPanelContentVisible(false);
-
-    scheduleAcademyStep(() => {
-      setLeftPanelOpen(false);
-      setRightPanelOpen(false);
-    }, 80);
-
-    scheduleAcademyStep(() => {
-      setTopBarVisible(false);
-      setAcademyMode(false);
-      setTutorOpen(false);
-      setActiveTarget(null);
-      setResumeLessonIndex(null);
-      setLeadInsightOpen(false);
-    }, 300);
-  }
-
-  function toggleAcademyMode() {
-    if (academyMode || topBarVisible || leftPanelOpen || rightPanelOpen) {
-      closeAcademyMode();
+  function toggleListening() {
+    if (isListening) {
+      stopListening();
     } else {
-      openAcademy();
+      setIsListening(true);
+      listeningTimer.current = setTimeout(stopListening, 4000);
     }
   }
 
-  function selectLessonStep(index) {
-    const step = lessonSteps[index];
-    const lesson =
-      activeBackendLesson ||
-      findLessonBySourceType(backendLessons, "release_note") ||
-      backendLessons[0] ||
-      null;
-
-    openAcademyMode();
-    setTutorOpen(true);
-    setActiveBackendLesson(lesson);
-    setLessonIndex(index);
-    setResumeLessonIndex(null);
-    setKnowledgeMode(false);
-    setReleaseMode(false);
-    guideTo(step.target);
-    recordProgressFor(lesson, index);
-    setMessages((items) => [
-      ...items,
-      {
-        speaker: "Academy",
-        text: step.narration,
-      },
-    ]);
+  function stopListening() {
+    setIsListening(false);
+    if (listeningTimer.current) {
+      clearTimeout(listeningTimer.current);
+      listeningTimer.current = null;
+    }
   }
 
-  function nextStep() {
-    if (resumeLessonIndex !== null && activeTarget === "score-chip") {
-      const resumeStep = lessonSteps[resumeLessonIndex];
-      setLessonIndex(resumeLessonIndex);
-      setResumeLessonIndex(null);
-      guideTo(resumeStep.target);
-      recordProgressFor(activeBackendLesson, resumeLessonIndex);
-      setMessages((items) => [
-        ...items,
+  function sendChat() {
+    const text = chatInput.trim();
+    if (!text) return;
+    setChatMessages(prev => [...prev, { type: "user", text }]);
+    setChatInput("");
+    if (chatTextareaRef.current) {
+      chatTextareaRef.current.style.height = "auto";
+    }
+    setTimeout(() => {
+      setChatMessages(prev => [
+        ...prev,
         {
-          speaker: "Academy",
-          text: `Back to where we were: ${resumeStep.narration}`,
+          type: "ai",
+          text: "Great question! Let me explain that for you in the context of this dashboard.",
         },
       ]);
-      return;
-    }
-
-    if (!activeTarget) {
-      const firstLesson =
-        activeBackendLesson ||
-        findLessonBySourceType(backendLessons, "release_note") ||
-        backendLessons[0] ||
-        null;
-      setActiveBackendLesson(firstLesson);
-      guideTo(activeStep.target);
-      recordProgressFor(firstLesson, lessonIndex);
-      setMessages((items) => [
-        ...items,
-        { speaker: "Academy", text: activeStep.narration },
-      ]);
-      return;
-    }
-
-    const nextIndex = Math.min(lessonIndex + 1, lessonSteps.length - 1);
-    const nextStepData = lessonSteps[nextIndex];
-    setLessonIndex(nextIndex);
-    guideTo(nextStepData.target);
-    recordProgressFor(activeBackendLesson, nextIndex);
-    setMessages((items) => [
-      ...items,
-      { speaker: "Academy", text: nextStepData.narration },
-    ]);
+    }, 800);
   }
 
-  function explainRelease() {
-    const releaseLesson = findLessonBySourceType(backendLessons, "release_note");
-    setActiveBackendLesson(releaseLesson);
-    setKnowledgeMode(false);
-    guideTo("updates");
-    setReleaseMode(true);
-    setMessages((items) => [
-      ...items,
-      {
-        speaker: "Academy",
-        text: releaseLesson
-          ? `Loaded "${releaseLesson.title}" from Insforge. ${currentUpdate.lesson}`
-          : `I found Lofty 4.40. A high-impact update is ${currentUpdate.title}. ${currentUpdate.lesson}`,
-      },
-    ]);
-    recordProgressFor(releaseLesson, 0);
-  }
-
-  function explainHelpTutorial() {
-    const helpLesson = findLessonBySourceType(backendLessons, "help_center_article");
-    setActiveBackendLesson(helpLesson);
-    setKnowledgeMode(true);
-    setReleaseMode(false);
-    guideTo("updates");
-    setMessages((items) => [
-      ...items,
-      {
-        speaker: "Academy",
-        text: `${helpCenterTutorial.liveSummary} For example: ${helpCenterTutorial.extractedSteps[2]}`,
-      },
-    ]);
-    recordProgressFor(helpLesson, 0);
-  }
-
-  function askQuestion(event) {
-    event.preventDefault();
-    const cleanQuestion = question.trim();
-    if (!cleanQuestion) return;
-    const answerSummary =
-      "Her 59 reflects a new Facebook lead with a valid contact path, renter intent, and no outreach yet. Lofty shows the evidence before asking the agent to act.";
-    setQuestion("");
-    setResumeLessonIndex(lessonIndex);
-    setLessonIndex(lessonSteps.findIndex((step) => step.target === "score-chip"));
-    guideTo("score-chip", { showLeadInsight: true });
-    setMessages((items) => [
-      ...items,
-      { speaker: "You", text: cleanQuestion },
-      {
-        speaker: "Academy",
-        text: `Great question. I paused the dashboard tour and moved to Emily's score. ${answerSummary}`,
-      },
-    ]);
-    recordQuestionEvent({
-      lessonId: activeBackendLesson?.id || backendLessons[0]?.id,
-      question: cleanQuestion,
-      answerSummary,
-      sourceScreen: "dashboard_lead_score",
-      userEmail: currentUser?.email,
-    })
-      .then(() => refreshBackendStatus("Q&A event logged to Insforge."))
-      .catch((error) => {
-        setBackendStatus((state) => ({ ...state, error: error.message }));
-      });
-  }
-
-  async function generateBackendLesson() {
-    if (!isInsforgeConfigured) return;
-
-    setBackendStatus((state) => ({
-      ...state,
-      generating: true,
-      error: "",
-      lastAction: "Calling generate-lesson Edge Function...",
-    }));
-
-    try {
-      const result = await generateLessonFromContent({
-        type: "help_center_article",
-        title: helpCenterTutorial.title,
-        source_url: helpCenterTutorial.url,
-        raw_content: helpCenterTutorial.extractedSteps.join("\n"),
-      });
-      setActiveBackendLesson(result.lesson);
-      setMessages((items) => [
-        ...items,
-        {
-          speaker: "Academy",
-          text: `Insforge generated and saved "${result.lesson.title}" from Help Center content.`,
-        },
-      ]);
-      await refreshBackendStatus("Edge Function generated and saved a lesson.");
-    } catch (error) {
-      setBackendStatus((state) => ({
-        ...state,
-        generating: false,
-        error: error.message,
-      }));
+  function handleChatKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChat();
     }
-  }
-
-  async function generateStudioLesson() {
-    if (!isInsforgeConfigured) {
-      setStudioError("Add Insforge env vars before generating a saved lesson.");
-      return;
-    }
-
-    setStudioSaving(true);
-    setStudioError("");
-
-    try {
-      const parsed = JSON.parse(studioSourceText);
-      const title = parsed.feature_name || parsed.title || "Lofty Release Lesson";
-      const result = await generateLessonFromContent({
-        type: "release_note",
-        title,
-        source_url:
-          "https://help.lofty.com/hc/en-us/articles/48927271391259-Feature-Updates-for-Lofty-4-40",
-        raw_content: JSON.stringify(parsed, null, 2),
-      });
-      setStudioResult(result);
-      setActiveBackendLesson(result.lesson);
-      setMessages((items) => [
-        ...items,
-        {
-          speaker: "Academy",
-          text: `Admin generated and saved "${result.lesson.title}" through Insforge.`,
-        },
-      ]);
-      await refreshBackendStatus("Admin generated a lesson draft.");
-    } catch (error) {
-      setStudioError(
-        error instanceof SyntaxError
-          ? "The release note JSON is not valid yet."
-          : error.message,
-      );
-    } finally {
-      setStudioSaving(false);
-    }
-  }
-
-  async function publishStudioLesson() {
-    const lessonId = studioResult?.lesson?.id;
-    if (!lessonId) return;
-
-    setStudioPublishing(true);
-    setStudioError("");
-
-    try {
-      const lesson = await publishLesson(lessonId);
-      setStudioResult((result) => ({ ...result, lesson }));
-      setActiveBackendLesson(lesson);
-      setMessages((items) => [
-        ...items,
-        {
-          speaker: "Academy",
-          text: `"${lesson.title}" is published for the agent lesson flow.`,
-        },
-      ]);
-      await refreshBackendStatus("Lesson published to agents.");
-    } catch (error) {
-      setStudioError(error.message);
-    } finally {
-      setStudioPublishing(false);
-    }
-  }
-
-  async function playLessonVoice() {
-    if (!isInsforgeConfigured) {
-      setVoiceStatus({
-        loading: false,
-        label: "Voice unavailable",
-        error: "Add Insforge env vars before using ElevenLabs voice.",
-      });
-      return;
-    }
-
-    const latestAcademyMessage = [...messages]
-      .reverse()
-      .find((message) => message.speaker === "Academy");
-    const voiceText =
-      latestAcademyMessage?.text ||
-      activeStep.narration ||
-      "Welcome to Agent Reborn. I can guide you through Lofty workflows.";
-
-    setVoiceStatus({ loading: true, label: "Generating voice...", error: "" });
-
-    try {
-      const audio = await synthesizeLessonSpeech(voiceText);
-      const player = new Audio(`data:${audio.mimeType};base64,${audio.audioBase64}`);
-      setVoiceStatus({ loading: false, label: "Playing voice", error: "" });
-      player.addEventListener("ended", () => {
-        setVoiceStatus({ loading: false, label: "Voice ready", error: "" });
-      });
-      await player.play();
-    } catch (error) {
-      setVoiceStatus({
-        loading: false,
-        label: "Voice failed",
-        error: error.message,
-      });
-    }
+    setTimeout(() => {
+      if (chatTextareaRef.current) {
+        chatTextareaRef.current.style.height = "auto";
+        chatTextareaRef.current.style.height =
+          Math.min(chatTextareaRef.current.scrollHeight, 80) + "px";
+      }
+    }, 0);
   }
 
   return (
-    <main className="lofty-shell">
-      <TopNav
-        currentUser={currentUser}
-        academyModeActive={academyMode || topBarVisible || leftPanelOpen || rightPanelOpen}
-        onToggleAcademy={toggleAcademyMode}
-        onOpenAcademy={openAcademy}
-        onLogout={demoLogout}
-      />
-      {!currentUser ? (
-        <DemoLogin
-          profiles={demoProfiles}
-          backendConnected={backendStatus.connected}
-          onLogin={demoLogin}
-        />
-      ) : null}
-      {currentUser?.role === "admin" ? (
-        <div className="workspace">
-          <ContentLessonStudio
-            sourceText={studioSourceText}
-            result={studioResult}
-            status={backendStatus}
-            error={studioError}
-            saving={studioSaving}
-            publishing={studioPublishing}
-            onSourceTextChange={setStudioSourceText}
-            onGenerate={generateStudioLesson}
-            onPublish={publishStudioLesson}
-          />
+    <div id="app">
+
+      {/* ══ ACADEMY TOP BAR ══ */}
+      <div id="academy-bar" className={academyOn ? "open" : ""}>
+        <button id="back-btn" onClick={handleBack}>← Back</button>
+
+        <div className="ab-brand-center">
+          <div className="ab-cap">🎓</div>
+          <span className="ab-brand-name">Lofty Academy</span>
+          <span className="ab-brand-sub">AI-Guided Mastery</span>
         </div>
-      ) : (
-        <>
-          <AcademyTopBar visible={topBarVisible} onClose={closeAcademyMode} />
-          <div className={`crm-layout ${academyMode ? "academy-active" : ""}`}>
-            <LeftPanel
-              open={leftPanelOpen}
-              contentVisible={panelContentVisible}
-              activeTarget={activeTarget}
-              lessonIndex={lessonIndex}
-              releaseMode={releaseMode}
-              knowledgeMode={knowledgeMode}
-              backendLessons={backendLessons}
-              backendStatus={backendStatus}
-              onSelectLessonStep={selectLessonStep}
-              onExplainRelease={explainRelease}
-              onExplainHelpTutorial={explainHelpTutorial}
-            />
-            <div className="crm-viewport">
-              <div
-                className="crm-stage"
-                style={{ "--academy-scale": academyMode ? academyScale : 1 }}
-              >
-                <div className="workspace">
-                  <Dashboard
-                    userName={currentUser?.name || "Shrey Demo"}
-                    activeTarget={tutorOpen ? activeTarget : null}
-                    cursorLabel={activeCursorLabel}
-                    cursorPulse={cursorPulse}
-                    leadInsightOpen={leadInsightOpen}
-                    onExplainRelease={explainRelease}
-                  />
-                  <RightRail />
+
+        <button id="exit-btn" onClick={toggleAcademy}>✕ Exit Academy</button>
+      </div>
+
+      <div id="body-row">
+
+        {/* ══ LEFT PANEL ══ */}
+        <div className={`side-panel${academyOn ? " open" : ""}`} id="left-panel">
+          <div className="panel-inner">
+
+            {/* VIEW 1: MAIN NAV */}
+            <div className={`lp-view${lpView === "main" ? " active" : ""}`} id="lp-main-view">
+              <div className="lp-header">
+                <div className="lp-title">Lofty Academy</div>
+                <div className="lp-subtitle">AI-Guided Mastery</div>
+              </div>
+
+              <div className="lp-scroll">
+                <div className="lp-section-label">
+                  <span>Navigation</span>
+                  <span className="lp-pct">75% Complete</span>
                 </div>
-              </div>
-            </div>
-            <RightPanel
-              open={rightPanelOpen}
-              contentVisible={panelContentVisible}
-              activeStep={activeStep}
-              lessonIndex={lessonIndex}
-              messages={messages}
-              question={question}
-              releaseMode={releaseMode}
-              knowledgeMode={knowledgeMode}
-              currentUpdate={currentUpdate}
-              helpCenterTutorial={helpCenterTutorial}
-              activeBackendLesson={activeBackendLesson}
-              backendStatus={backendStatus}
-              currentUser={currentUser}
-              voiceStatus={voiceStatus}
-              hasActiveTarget={Boolean(activeTarget)}
-              hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
-              setQuestion={setQuestion}
-              onAskQuestion={askQuestion}
-              onNextStep={nextStep}
-              onExplainRelease={explainRelease}
-              onExplainHelpTutorial={explainHelpTutorial}
-              onGenerateBackendLesson={generateBackendLesson}
-              onPlayVoice={playLessonVoice}
-              onClose={closeAcademyMode}
-            />
-          </div>
-        </>
-      )}
-      {tutorOpen && !academyMode ? (
-        <AcademyTutor
-          activeStep={activeStep}
-          lessonIndex={lessonIndex}
-          messages={messages}
-          question={question}
-          releaseMode={releaseMode}
-          knowledgeMode={knowledgeMode}
-          currentUpdate={currentUpdate}
-          helpCenterTutorial={helpCenterTutorial}
-          activeBackendLesson={activeBackendLesson}
-          backendStatus={backendStatus}
-          currentUser={currentUser}
-          voiceStatus={voiceStatus}
-          hasActiveTarget={Boolean(activeTarget)}
-          hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
-          setQuestion={setQuestion}
-          onAskQuestion={askQuestion}
-          onNextStep={nextStep}
-          onExplainRelease={explainRelease}
-          onExplainHelpTutorial={explainHelpTutorial}
-          onGenerateBackendLesson={generateBackendLesson}
-          onPlayVoice={playLessonVoice}
-          onClose={() => setTutorOpen(false)}
-        />
-      ) : null}
-    </main>
-  );
-}
 
-function TopNav({
-  currentUser,
-  academyModeActive,
-  onToggleAcademy,
-  onOpenAcademy,
-  onLogout,
-}) {
-  return (
-    <header className="top-nav">
-      <div className="brand">
-        <span className="lofty-mark" aria-hidden="true">
-          <span />
-        </span>
-        <span className="brand-word">Lofty</span>
-      </div>
-      <nav className="main-tabs" aria-label="Primary navigation">
-        <a href="/">CRM</a>
-        <a href="/">Sales</a>
-        <a href="/">Marketing</a>
-        <a href="/">Content</a>
-        <a href="/">Automation</a>
-        <a href="/">Reporting</a>
-        <a href="/">Marketplace</a>
-        <button className="ai-tab" onClick={onOpenAcademy}>✦ AI Copilots</button>
-      </nav>
-      <div className="nav-search" aria-label="Search">
-        <span className="search-icon" />
-      </div>
-      <AcademyToggle active={academyModeActive} onToggle={onToggleAcademy} />
-      <button className="profile-button" onClick={onLogout} aria-label="Shrey profile">
-        <span className="avatar" />
-        {currentUser ? <span>{currentUser.role}</span> : null}
-      </button>
-    </header>
-  );
-}
-
-function AcademyToggle({ active, onToggle }) {
-  return (
-    <button
-      className={`academy-toggle ${active ? "active" : ""}`}
-      onClick={onToggle}
-      aria-pressed={active}
-    >
-      <span className="toggle-track">
-        <span className="toggle-knob" />
-      </span>
-      <span>Academy mode</span>
-    </button>
-  );
-}
-
-function AcademyTopBar({ visible, onClose }) {
-  return (
-    <div className={`academy-topbar ${visible ? "visible" : ""}`}>
-      <button onClick={onClose}>✕ Exit</button>
-      <span>LOFTY ACADEMY MODE</span>
-      <div />
-    </div>
-  );
-}
-
-function LeftPanel({
-  open,
-  contentVisible,
-  activeTarget,
-  lessonIndex,
-  releaseMode,
-  knowledgeMode,
-  backendLessons,
-  backendStatus,
-  onSelectLessonStep,
-  onExplainRelease,
-  onExplainHelpTutorial,
-}) {
-  const releaseLesson = findLessonBySourceType(backendLessons, "release_note");
-  const helpLesson = findLessonBySourceType(backendLessons, "help_center_article");
-  const completedCoreCount = activeTarget
-    ? Math.min(lessonIndex + 1, lessonSteps.length)
-    : 0;
-  const totalLessons = lessonSteps.length + 2;
-  const completedCount =
-    completedCoreCount + (releaseMode ? 1 : 0) + (knowledgeMode ? 1 : 0);
-
-  return (
-    <aside className={`left-panel ${open ? "open" : ""}`} aria-label="Academy lessons">
-      <div className={`panel-content ${contentVisible ? "visible" : ""}`}>
-        <div className="academy-left-content">
-          <header className="academy-left-header">
-            <span>Lofty Academy</span>
-            <h2>AI-Guided Mastery</h2>
-            <p>My courses <strong>{Math.round((completedCount / totalLessons) * 100)}% Complete</strong></p>
-          </header>
-
-          <nav className="academy-course-list" aria-label="Academy course navigation">
-            {lessonSteps.map((step, index) => {
-              const isActive = activeTarget === step.target;
-              const isComplete = activeTarget && index < lessonIndex;
-              return (
-                <button
-                  key={step.target}
-                  className={isActive ? "active" : ""}
-                  onClick={() => onSelectLessonStep(index)}
-                >
-                  <span>{isComplete ? "✓" : index + 1}</span>
-                  <div>
-                    <strong>{step.label}</strong>
-                    <small>{isActive ? "Cursor live now" : isComplete ? "Complete" : "Lesson"}</small>
+                {NAV_ITEMS.map((item, i) => (
+                  <div
+                    key={item.label}
+                    className={`lp-nav-item${lpActiveNav === i ? " active" : ""}`}
+                    onClick={() => {
+                      setLpActiveNav(i);
+                      if (item.view) setLpView(item.view);
+                    }}
+                  >
+                    <div className="lp-nav-icon">{item.icon}</div>
+                    {item.label}
+                    {item.badge && (
+                      <span
+                        className="lp-nav-badge"
+                        style={item.badgeColor ? { background: item.badgeColor } : {}}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
-                </button>
-              );
-            })}
-            <button className={releaseMode ? "active" : ""} onClick={onExplainRelease}>
-              <span>↗</span>
-              <div>
-                <strong>Lofty 4.40 Release</strong>
-                <small>{releaseLesson ? "Backend lesson ready" : "Release update lesson"}</small>
-              </div>
-            </button>
-            <button className={knowledgeMode ? "active" : ""} onClick={onExplainHelpTutorial}>
-              <span>?</span>
-              <div>
-                <strong>Help Center Tutorial</strong>
-                <small>{helpLesson ? "Extracted from docs" : "Documentation lesson"}</small>
-              </div>
-            </button>
-          </nav>
+                ))}
 
-          <section className="academy-progress-card">
-            <strong>{Math.round((completedCount / totalLessons) * 100)}%</strong>
-            <span>Overall</span>
-            <div>
-              <span style={{ width: `${(completedCount / totalLessons) * 100}%` }} />
-            </div>
-          </section>
-
-          <section className="academy-proof-card">
-            <span>Live backend</span>
-            <p>{backendStatus.lessonCount} lessons · {backendStatus.questionCount} Q&A · {backendStatus.progressCount} progress</p>
-          </section>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function RightPanel({
-  open,
-  contentVisible,
-  activeStep,
-  lessonIndex,
-  messages,
-  question,
-  releaseMode,
-  knowledgeMode,
-  currentUpdate,
-  helpCenterTutorial,
-  activeBackendLesson,
-  backendStatus,
-  currentUser,
-  voiceStatus,
-  hasActiveTarget,
-  hasResumeTarget,
-  setQuestion,
-  onAskQuestion,
-  onNextStep,
-  onExplainRelease,
-  onExplainHelpTutorial,
-  onGenerateBackendLesson,
-  onPlayVoice,
-  onClose,
-}) {
-  return (
-    <aside className={`right-panel ${open ? "open" : ""}`} aria-label="Academy AI chat">
-      <div className={`panel-content ${contentVisible ? "visible" : ""}`}>
-        <AcademyTutor
-          docked
-          activeStep={activeStep}
-          lessonIndex={lessonIndex}
-          messages={messages}
-          question={question}
-          releaseMode={releaseMode}
-          knowledgeMode={knowledgeMode}
-          currentUpdate={currentUpdate}
-          helpCenterTutorial={helpCenterTutorial}
-          activeBackendLesson={activeBackendLesson}
-          backendStatus={backendStatus}
-          currentUser={currentUser}
-          voiceStatus={voiceStatus}
-          hasActiveTarget={hasActiveTarget}
-          hasResumeTarget={hasResumeTarget}
-          setQuestion={setQuestion}
-          onAskQuestion={onAskQuestion}
-          onNextStep={onNextStep}
-          onExplainRelease={onExplainRelease}
-          onExplainHelpTutorial={onExplainHelpTutorial}
-          onGenerateBackendLesson={onGenerateBackendLesson}
-          onPlayVoice={onPlayVoice}
-          onClose={onClose}
-        />
-      </div>
-    </aside>
-  );
-}
-
-function DemoLogin({ profiles, backendConnected, onLogin }) {
-  const fallbackProfiles = profiles.length
-    ? profiles
-    : [
-        { email: "shrey@lofty.demo", name: "Shrey Demo", role: "agent" },
-        { email: "pm@agentreborn.demo", name: "Agent Reborn PM", role: "admin" },
-      ];
-
-  return (
-    <section className="demo-login" aria-label="Agent Reborn demo login">
-      <div>
-        <span>Agent Reborn</span>
-        <h2>Choose a demo login</h2>
-        <p>
-          This lightweight demo session uses Insforge profiles so judges can see
-          agent/admin roles without Google OAuth.
-        </p>
-      </div>
-      <div className="demo-login-actions">
-        {fallbackProfiles.map((profile) => (
-          <button key={profile.email} onClick={() => onLogin(profile)}>
-            <strong>{profile.role === "admin" ? "Admin" : "Agent"}</strong>
-            <span>{profile.name}</span>
-          </button>
-        ))}
-      </div>
-      <p className="demo-login-status">
-        Insforge profiles: {backendConnected ? "connected" : "local fallback"}
-      </p>
-    </section>
-  );
-}
-
-function Dashboard({
-  userName,
-  activeTarget,
-  cursorLabel,
-  cursorPulse,
-  leadInsightOpen,
-  onExplainRelease,
-}) {
-  return (
-    <section className="dashboard" aria-label="Lofty dashboard mock">
-      <GuidanceLayer
-        activeTarget={activeTarget}
-        cursorLabel={cursorLabel}
-        cursorPulse={cursorPulse}
-      />
-      <div className="dashboard-head">
-        <div className="greeting">
-          <span className="wave" aria-hidden="true">👋</span>
-          <h1>Good Evening, {userName.replace(" Demo", "")}!</h1>
-          <span className="separator" />
-          <button className="dashboard-select">My Dashboard</button>
-        </div>
-        <div className="dashboard-actions">
-          <button className="priority-select">Today's Priorities</button>
-          <button className="grid-button" aria-label="Dashboard grid">
-            <span />
-          </button>
-        </div>
-      </div>
-
-      <div className="card-grid">
-        <Card className="updates-card" id="updates" activeTarget={activeTarget}>
-          <div className="tabs">
-            <button className="active">New Updates</button>
-            <button>Announcements</button>
-          </div>
-          <div className="tab-rule" />
-          <article className="update-row">
-            <div className="update-thumb photo-thumb" />
-            <div>
-              <h3>✨ New Service: done-for-you Website</h3>
-              <p>We build website, you close deals!</p>
-            </div>
-          </article>
-          <button className="update-row release-update" onClick={onExplainRelease}>
-            <div className="update-thumb rocket-thumb" />
-            <div>
-              <h3>Check Lofty's latest feature updates!</h3>
-              <p>Lofty 4.40 release guide</p>
-            </div>
-          </button>
-        </Card>
-
-        <Card className="leads-card" id="new-leads" activeTarget={activeTarget}>
-          <CardTitle title="Today's New Leads" showGear />
-          <div className="thin-progress" />
-          <h3 className="metric-title">Total: 8 (8 untouched)</h3>
-          <p className="section-label">Leads Waiting To Be Contacted</p>
-          <LeadRow
-            name="Emily Wilson"
-            type="Renter"
-            source="Facebook"
-            score="59"
-            active={activeTarget === "score-chip"}
-          />
-          {leadInsightOpen ? <LeadScoreInsight /> : null}
-          <LeadRow name="Carlos Garcia" type="Other" source="Zillow" score="44" />
-          <LeadRow name="Samuel Scott" type="Buyer" source="YouTube" score="43" />
-          <button className="view-all">View All <span>›</span></button>
-        </Card>
-
-        <Card className="opportunity-card" id="opportunities" activeTarget={activeTarget}>
-          <CardTitle title="Today's Opportunities" />
-          <div className={`opportunity-stats ${activeTarget === "opportunity-stats" ? "targeted-section" : ""}`}>
-            <Stat label="High Interest" value="0" />
-            <Stat label="Likely Sellers" value="0" />
-            <Stat label="Back to Site" value="0" />
-          </div>
-          <div className="empty-state">
-            <div className="box-illustration">
-              <span className="cloud one" />
-              <span className="cloud two" />
-              <span className="person" />
-              <span className="box" />
-            </div>
-            <p>Nothing on your to-do list yet — Enjoy your day!</p>
-          </div>
-        </Card>
-
-        <Card className="compact-card" id="touch" activeTarget={activeTarget}>
-          <CardTitle title="Need Keep In Touch" />
-          <div className="split-stats">
-            <Stat label="Birthday" value="0" />
-            <Stat label="Follow-Up" value="0" />
-          </div>
-        </Card>
-
-        <Card className="compact-card" id="transactions" activeTarget={activeTarget}>
-          <CardTitle title="Transactions" showGear />
-          <div className="split-stats">
-            <Stat label="Near Deadline" value="0" />
-            <Stat label="Expired" value="0" />
-          </div>
-        </Card>
-
-        <Card className="compact-card tasks-card" id="tasks" activeTarget={activeTarget}>
-          <CardTitle title="Today's Tasks" />
-          <div className="task-stats">
-            <TaskStat label="Call" color="blue" />
-            <TaskStat label="Text" color="sky" />
-            <TaskStat label="Email" color="green" />
-            <TaskStat label="Other" color="orange" />
-          </div>
-        </Card>
-      </div>
-    </section>
-  );
-}
-
-function ContentLessonStudio({
-  sourceText,
-  result,
-  status,
-  error,
-  saving,
-  publishing,
-  onSourceTextChange,
-  onGenerate,
-  onPublish,
-}) {
-  const lesson = result?.lesson;
-  const lessonStepsPreview = lesson?.lesson_json?.steps || [];
-  const generatedAt = result?.source?.created_at
-    ? new Date(result.source.created_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
-
-  return (
-    <section className="studio-page" aria-label="Content-to-Lesson Studio">
-      <div className="studio-hero">
-        <div>
-          <span>Agent Reborn Admin</span>
-          <h1>Content-to-Lesson Studio</h1>
-          <p>
-            Turn a Lofty release note or Help Center tutorial into a validated lesson,
-            save it to Insforge, and publish it into the agent education layer.
-          </p>
-        </div>
-        <div className="studio-status-card">
-          <span>Insforge proof</span>
-          <strong>{status.connected ? "Connected" : "Local fallback"}</strong>
-          <p>
-            {status.lessonCount} lessons · {status.sourceCount} sources ·{" "}
-            {status.questionCount} questions · {status.progressCount} progress rows
-          </p>
-        </div>
-      </div>
-
-      <div className="studio-grid">
-        <section className="studio-panel source-panel">
-          <div className="studio-panel-head">
-            <div>
-              <span>Source content</span>
-              <h2>Lofty 4.40 release JSON</h2>
-            </div>
-            <strong>Step 1</strong>
-          </div>
-          <textarea
-            value={sourceText}
-            onChange={(event) => onSourceTextChange(event.target.value)}
-            spellCheck="false"
-          />
-          {error ? <p className="studio-error">{error}</p> : null}
-          <button className="studio-primary" onClick={onGenerate} disabled={saving}>
-            {saving ? "Generating..." : "Generate + save lesson"}
-          </button>
-        </section>
-
-        <section className="studio-panel preview-panel">
-          <div className="studio-panel-head">
-            <div>
-              <span>Generated lesson</span>
-              <h2>{lesson?.title || "Waiting for generated preview"}</h2>
-            </div>
-            <strong>Step 2</strong>
-          </div>
-
-          {lesson ? (
-            <>
-              <div className="lesson-preview-meta">
-                <span>{lesson.audience}</span>
-                <span>{lesson.validation_status}</span>
-                <span>{lesson.published ? "published" : "draft"}</span>
-              </div>
-              <div className="lesson-preview-steps">
-                {lessonStepsPreview.map((step, index) => (
-                  <article key={`${step.label}-${index}`}>
-                    <span>{index + 1}</span>
-                    <div>
-                      <strong>{step.label}</strong>
-                      <p>{step.narration}</p>
+                {/* Progress ring */}
+                <div className="lp-ring-section">
+                  <div className="ring-wrap">
+                    <svg width="88" height="88" viewBox="0 0 88 88">
+                      <circle className="ring-bg"   cx="44" cy="44" r="35" />
+                      <circle className="ring-fill" cx="44" cy="44" r="35" />
+                    </svg>
+                    <div className="ring-center">
+                      <div className="ring-pct">75%</div>
+                      <div className="ring-word">Overall</div>
                     </div>
-                  </article>
+                  </div>
+                  <div className="ring-caption">
+                    <strong>75% complete</strong><br />
+                    <span style={{ fontSize: "10px", color: "var(--gray-400)" }}>
+                      2 lessons left to master!
+                    </span>
+                  </div>
+                </div>
+
+                {/* Feature card */}
+                <div className="lp-feature-card">
+                  <div className="lp-feature-title">New Features</div>
+                  <div className="lp-feature-desc">
+                    Discover the latest AI Lead Prediction tools released today.
+                  </div>
+                  <button className="lp-feature-btn">Explore Now</button>
+                </div>
+
+                <div className="lp-spacer" />
+              </div>
+
+              <div className="lp-cert-btn-wrap">
+                <button className="lp-cert-btn">🏅 View Certificate</button>
+              </div>
+            </div>
+
+            {/* VIEW 2: COURSES */}
+            <div className={`lp-view${lpView === "courses" ? " active" : ""}`} id="lp-courses-view">
+              <div className="lp-header">
+                <div className="lp-title">Lofty Academy</div>
+                <div className="lp-subtitle">AI-Guided Mastery</div>
+              </div>
+
+              <div className="lp-view-header">
+                <div className="lp-view-back" onClick={() => setLpView("main")}>←</div>
+                <div className="lp-view-title">Courses</div>
+                <div className="lp-view-subtitle">5 courses · 15 lessons</div>
+              </div>
+
+              <div className="lp-scroll">
+                {COURSES.map((course, idx) => (
+                  <div className="course-item" key={course.name}>
+                    <div
+                      className={`course-row${expandedCourse === idx ? " expanded" : ""}`}
+                      onClick={() => toggleCourse(idx)}
+                    >
+                      <div className={`course-status-icon ${course.status}`}>
+                        {course.status === "done" ? "✓" : course.status === "active" ? "●" : "○"}
+                      </div>
+                      <div className="course-info">
+                        <div className="course-name">{course.name}</div>
+                        <div className="course-meta">{course.meta}</div>
+                      </div>
+                      {course.status === "done"   && <span className="course-done-badge">Done</span>}
+                      {course.status === "active" && <span className="course-inprog-badge">Active</span>}
+                      <span className="course-chevron">›</span>
+                    </div>
+                    <div className={`lessons-list${expandedCourse === idx ? " open" : ""}`}>
+                      {course.lessons.map(lesson => (
+                        <div className="lesson-row" key={lesson.name}>
+                          <div className={`lesson-dot ${lesson.status}`}>
+                            {lesson.status === "done" ? "✓" : lesson.status === "active" ? "▶" : ""}
+                          </div>
+                          <span className="lesson-name">{lesson.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-              <p className="studio-save-proof">
-                Saved to Insforge{generatedAt ? ` at ${generatedAt}` : ""}. Refreshing
-                the app keeps this lesson in the backend counts.
-              </p>
-            </>
-          ) : (
-            <div className="preview-empty">
-              <strong>No lesson generated yet</strong>
-              <p>
-                The next click will call the Insforge Edge Function, insert the source,
-                insert the lesson, and return a preview for publishing.
-              </p>
             </div>
-          )}
-        </section>
 
-        <section className="studio-panel publish-panel">
-          <div className="studio-panel-head">
-            <div>
-              <span>Publish flow</span>
-              <h2>Audience and proof</h2>
+            {/* VIEW 3: RELEASES */}
+            <div className={`lp-view${lpView === "releases" ? " active" : ""}`} id="lp-releases-view">
+              <div className="lp-header">
+                <div className="lp-title">Lofty Academy</div>
+                <div className="lp-subtitle">AI-Guided Mastery</div>
+              </div>
+
+              <div className="lp-view-header">
+                <div className="lp-view-back" onClick={() => setLpView("main")}>←</div>
+                <div className="lp-view-title">Releases</div>
+                <div className="lp-view-subtitle">5 versions</div>
+              </div>
+
+              <div className="lp-scroll">
+                {RELEASES.map((release, idx) => (
+                  <div className="release-item" key={release.version}>
+                    <div
+                      className={`release-row${expandedRelease === idx ? " expanded" : ""}`}
+                      onClick={() => toggleRelease(idx)}
+                    >
+                      <span
+                        className="release-badge"
+                        style={release.badgeColor ? { background: release.badgeColor } : {}}
+                      >
+                        {release.version}
+                      </span>
+                      <div className="release-info">
+                        <div className="release-name">{release.name}</div>
+                        <div className="release-date">{release.date}</div>
+                      </div>
+                      <span className="release-chevron">›</span>
+                    </div>
+                    <div className={`lessons-list${expandedRelease === idx ? " open" : ""}`}>
+                      {release.lessons.map(lesson => (
+                        <div className="lesson-row" key={lesson.name}>
+                          <div className={`lesson-dot ${lesson.status}`}>
+                            {lesson.status === "done" ? "✓" : ""}
+                          </div>
+                          <span className="lesson-name">{lesson.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <strong>Step 3</strong>
+
           </div>
-          <div className="publish-audience">
-            <article>
-              <span>New agents</span>
-              <strong>First login onboarding</strong>
-            </article>
-            <article>
-              <span>Experienced agents</span>
-              <strong>Release adoption prompt</strong>
-            </article>
+        </div>
+
+        {/* ══ CRM VIEWPORT ══ */}
+        <div id="crm-viewport">
+
+          {/* CRM NAVBAR */}
+          <nav id="crm-nav">
+            <a className="nav-logo" href="#">
+              <div className="nav-logo-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" fill="#fff" />
+                  <polyline points="9 22 9 12 15 12 15 22" fill="none" stroke="#3b5cde" strokeWidth="2" />
+                </svg>
+              </div>
+              <span className="nav-logo-text">Lofty</span>
+            </a>
+
+            <div className="nav-links" id="nav-links">
+              {["CRM","Sales","Marketing","Content","Automation","Reporting","Marketplace"].map(l => (
+                <a className="nav-link" href="#" key={l}>{l}</a>
+              ))}
+              <a className="nav-link ai-link" href="#">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                </svg>
+                AI Copilots
+              </a>
+            </div>
+
+            <div className="nav-right">
+              <div className="nav-search" id="nav-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span className="search-txt" style={{ color: "var(--gray-400)" }}>Search...</span>
+              </div>
+
+              <button
+                id="academy-toggle"
+                className={academyOn ? "active" : ""}
+                onClick={toggleAcademy}
+              >
+                <div className={`toggle-track${academyOn ? " on" : ""}`} id="toggle-track">
+                  <div className="toggle-thumb" />
+                </div>
+                <span id="toggle-label">{academyOn ? "Academy On" : "Academy"}</span>
+              </button>
+
+              <div className="nav-avatar">BR</div>
+            </div>
+          </nav>
+
+          {/* CRM BODY */}
+          <div id="crm-body">
+
+            {/* Dashboard content */}
+            <div id="crm-content">
+              <div className="dash-header">
+                <div className="dash-greeting">
+                  👋 Good Afternoon, Baylee!
+                  <div className="dash-dropdown">
+                    My Dashboard
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="dash-meta">
+                  <div className="dash-priority-select">
+                    Today&apos;s Priorities
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <div className="grid-toggle">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="dash-grid">
+
+                {/* New Updates */}
+                <div className="dash-card">
+                  <div className="card-header">
+                    <div className="card-tabs">
+                      <div className="card-tab">New Updates</div>
+                      <div className="card-tab inactive">Announcements</div>
+                    </div>
+                  </div>
+                  <div className="update-item">
+                    <div className="update-img">
+                      <div style={{ background: "linear-gradient(135deg,#dbeafe,#bfdbfe)", width: "100%", height: "100%" }} />
+                    </div>
+                    <div>
+                      <div className="update-text-title">✨ New Service: Done-for-you Website</div>
+                      <div className="update-text-sub">We build website, you close deals!</div>
+                    </div>
+                  </div>
+                  <div className="update-item">
+                    <div className="update-img">
+                      <div style={{ background: "linear-gradient(135deg,#ede9fe,#ddd6fe)", width: "100%", height: "100%" }} />
+                    </div>
+                    <div>
+                      <div className="update-text-title">Check Lofty&apos;s latest feature updates!</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Today's New Leads */}
+                <div className="dash-card">
+                  <div className="card-header">
+                    <div className="card-title">Today&apos;s New Leads</div>
+                    <div className="card-actions">
+                      <span className="card-icon">?</span>
+                      <span className="card-icon">⚙</span>
+                    </div>
+                  </div>
+                  <div className="progress-bar-crm">
+                    <div className="progress-bar-fill" style={{ width: "65%" }} />
+                  </div>
+                  <div className="leads-count">Total: 7 (7 untouched)</div>
+                  <div className="leads-section-title">Leads Waiting To Be Contacted</div>
+                  <div className="lead-row">
+                    <div>
+                      <div className="lead-name">Emily Wilson</div>
+                      <div className="lead-meta">Renter · Facebook</div>
+                    </div>
+                    <div className="lead-score">59</div>
+                  </div>
+                  <div className="lead-row">
+                    <div>
+                      <div className="lead-name">Carlos Garcia</div>
+                      <div className="lead-meta">Other · Zillow</div>
+                    </div>
+                    <div className="lead-score" style={{ background: "#fce7f3", color: "#be185d" }}>44</div>
+                  </div>
+                  <div className="lead-row">
+                    <div>
+                      <div className="lead-name">Samuel Scott</div>
+                      <div className="lead-meta">Buyer · YouTube</div>
+                    </div>
+                    <div className="lead-score" style={{ background: "var(--green-light)", color: "var(--green)" }}>43</div>
+                  </div>
+                  <div className="view-all">View All <span>›</span></div>
+                </div>
+
+                {/* Today's Opportunities */}
+                <div className="dash-card">
+                  <div className="card-header">
+                    <div className="card-title">Today&apos;s Opportunities</div>
+                    <div className="card-actions"><span className="card-icon">?</span></div>
+                  </div>
+                  <div className="stat-row">
+                    <div className="stat-col">
+                      <div className="stat-label">High Interest</div>
+                      <div className="stat-value">0</div>
+                    </div>
+                    <div className="stat-col">
+                      <div className="stat-label">Likely Sellers</div>
+                      <div className="stat-value">0</div>
+                    </div>
+                    <div className="stat-col">
+                      <div className="stat-label">Back to Site</div>
+                      <div className="stat-value">0</div>
+                    </div>
+                  </div>
+                  <div className="no-data">Nothing on your to-do list yet — Enjoy your day!</div>
+                </div>
+
+                {/* Need Keep In Touch */}
+                <div className="dash-card">
+                  <div className="card-header">
+                    <div className="card-title">Need Keep In Touch</div>
+                    <div className="card-actions"><span className="card-icon">?</span></div>
+                  </div>
+                  <div className="stat-pair">
+                    <div className="sp">
+                      <div className="sp-label">Birthday</div>
+                      <div className="sp-val">0</div>
+                    </div>
+                    <div className="sp">
+                      <div className="sp-label">Follow-Up</div>
+                      <div className="sp-val">0</div>
+                    </div>
+                  </div>
+                  <div className="no-data">Nothing on your to-do list yet — Enjoy your day!</div>
+                </div>
+
+                {/* Transactions */}
+                <div className="dash-card">
+                  <div className="card-header">
+                    <div className="card-title">Transactions</div>
+                    <div className="card-actions">
+                      <span className="card-icon">?</span>
+                      <span className="card-icon">⚙</span>
+                    </div>
+                  </div>
+                  <div className="stat-pair">
+                    <div className="sp">
+                      <div className="sp-label">Near Deadline</div>
+                      <div className="sp-val">0</div>
+                    </div>
+                    <div className="sp">
+                      <div className="sp-label">Expired</div>
+                      <div className="sp-val">0</div>
+                    </div>
+                  </div>
+                  <div className="no-data">Nothing on your to-do list yet — Enjoy your day!</div>
+                </div>
+
+                {/* Today's Tasks */}
+                <div className="dash-card">
+                  <div className="card-header">
+                    <div className="card-title">Today&apos;s Tasks</div>
+                    <div className="card-actions"><span className="card-icon">?</span></div>
+                  </div>
+                  <div className="tasks-grid">
+                    <div className="task-chip">
+                      <div className="task-chip-label">Call</div>
+                      <div className="task-chip-val call">0</div>
+                    </div>
+                    <div className="task-chip">
+                      <div className="task-chip-label">Text</div>
+                      <div className="task-chip-val text">0</div>
+                    </div>
+                    <div className="task-chip">
+                      <div className="task-chip-label">Email</div>
+                      <div className="task-chip-val email">0</div>
+                    </div>
+                    <div className="task-chip">
+                      <div className="task-chip-label">Other</div>
+                      <div className="task-chip-val other">0</div>
+                    </div>
+                  </div>
+                  <div className="no-data">Nothing on your to-do list yet — Enjoy your day!</div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* CRM ICON STRIP */}
+            <div id="crm-icon-strip">
+              <div className="crm-strip-btn" title="AI Features">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74z" />
+                </svg>
+              </div>
+              <div className="crm-strip-btn" title="Calls">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.82a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L9.91 14.91a16 16 0 006.29 6.29l1.42-1.42a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />
+                </svg>
+              </div>
+              <div className="crm-strip-btn" title="Inbox">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+                  <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" />
+                </svg>
+              </div>
+              <div className="crm-strip-divider" />
+              <div className="crm-strip-btn" title="Notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 01-3.46 0" />
+                </svg>
+              </div>
+              <div className="crm-strip-btn" title="Help">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <div className="crm-strip-btn" title="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                </svg>
+              </div>
+            </div>
+
           </div>
-          <button
-            className="studio-primary publish-button"
-            onClick={onPublish}
-            disabled={!lesson || publishing}
-          >
-            {publishing ? "Publishing..." : lesson?.published ? "Republish to agents" : "Publish to new agents"}
-          </button>
-          <p>
-            For the video: generate the lesson, show the preview, publish, then switch
-            to the agent login and open AI Copilots to show the same education layer.
-          </p>
-        </section>
-      </div>
-    </section>
-  );
-}
-
-function GuidanceLayer({ activeTarget, cursorLabel, cursorPulse }) {
-  if (!activeTarget) return null;
-
-  return (
-    <div
-      key={`${activeTarget}-${cursorPulse}`}
-      className={`ai-cursor cursor-${activeTarget}`}
-      aria-hidden="true"
-    >
-      <span className="ai-cursor-pulse" />
-      <span className="ai-cursor-pointer" />
-      <span className="ai-cursor-label">{cursorLabel || "Lofty Academy"}</span>
-      <span className={`tutorial-red-box red-box-${activeTarget}`} />
-      <span className={`tutorial-arrow arrow-${activeTarget}`}>
-        <span>{activeTarget === "score-chip" ? "2" : "1"}</span>
-      </span>
-    </div>
-  );
-}
-
-function Card({ children, className = "", id, activeTarget }) {
-  const isActive =
-    activeTarget === id ||
-    (id === "new-leads" && activeTarget === "score-chip") ||
-    (id === "opportunities" && activeTarget === "opportunity-stats");
-
-  return (
-    <section className={`card ${className} ${isActive ? "active-explain" : ""}`}>
-      {children}
-    </section>
-  );
-}
-
-function CardTitle({ title, showGear = false }) {
-  return (
-    <div className="card-title">
-      <h2>{title}</h2>
-      <div className="card-icons">
-        <span className="help-dot">?</span>
-        {showGear ? <span className="gear">⚙</span> : null}
-      </div>
-    </div>
-  );
-}
-
-function LeadRow({ name, type, source, score, active = false }) {
-  return (
-    <article className={`lead-row ${active ? "score-active" : ""}`}>
-      <div>
-        <h4>{name}</h4>
-        <p>{type}</p>
-        <p>{source}</p>
-      </div>
-      <span className="score">{score}</span>
-    </article>
-  );
-}
-
-function LeadScoreInsight() {
-  return (
-    <aside className="lead-insight-panel" aria-label="Lead score explanation">
-      <div>
-        <span>Why 59?</span>
-        <strong>Lead score evidence</strong>
-      </div>
-      <ul>
-        <li>New Facebook lead with valid contact details</li>
-        <li>Renter intent, not yet a high purchase signal</li>
-        <li>No agent outreach yet, so Lofty recommends first contact</li>
-      </ul>
-    </aside>
-  );
-}
-
-function Stat({ label, value }) {
-  return (
-    <div className="stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function TaskStat({ label, color }) {
-  return (
-    <div className={`task-stat ${color}`}>
-      <span>{label}</span>
-      <strong>0</strong>
-    </div>
-  );
-}
-
-function RightRail() {
-  return (
-    <aside className="right-rail" aria-label="Lofty quick tools">
-      <button>✦</button>
-      <button>☏</button>
-      <button>▤</button>
-      <button>♧</button>
-      <button>?</button>
-      <button>⚙</button>
-    </aside>
-  );
-}
-
-function AcademyTutor({
-  docked = false,
-  activeStep,
-  lessonIndex,
-  messages,
-  question,
-  releaseMode,
-  knowledgeMode,
-  currentUpdate,
-  helpCenterTutorial,
-  activeBackendLesson,
-  backendStatus,
-  currentUser,
-  voiceStatus,
-  hasActiveTarget,
-  hasResumeTarget,
-  setQuestion,
-  onAskQuestion,
-  onNextStep,
-  onExplainRelease,
-  onExplainHelpTutorial,
-  onGenerateBackendLesson,
-  onPlayVoice,
-  onClose,
-}) {
-  const backendLessonTitle = activeBackendLesson?.title;
-
-  return (
-    <aside
-      className={`academy-panel ${docked ? "academy-panel-docked" : ""}`}
-      aria-label="Lofty Academy education layer"
-    >
-      <div className="academy-header">
-        <div>
-          <span className="eyebrow">Lofty Academy</span>
-          <h2>AI education layer</h2>
         </div>
-        <div className="academy-header-actions">
-          <span className="live-pill">Live lesson</span>
-          <button
-            className="voice-button"
-            onClick={onPlayVoice}
-            disabled={voiceStatus.loading}
-            title="Play ElevenLabs narration"
-          >
-            {voiceStatus.loading ? "Voice..." : "Voice"}
-          </button>
-          <button className="close-academy" onClick={onClose} aria-label="Close Academy">×</button>
+
+        {/* ══ RIGHT PANEL — CHAT + VOICE ══ */}
+        <div className={`side-panel${academyOn ? " open" : ""}`} id="right-panel">
+          <div className="panel-inner" style={{ padding: 0 }}>
+            <div className="rp-inner">
+
+              {/* Chat messages */}
+              <div className="rp-chat-area" id="chat-messages" ref={chatAreaRef}>
+                <div className="rp-heading">
+                  AI Tutor Chat
+                  <span
+                    id="voice-toggle-btn"
+                    onClick={toggleVoiceMode}
+                    title="Toggle voice mode"
+                    style={{
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      color: voiceOn ? "#fff" : "var(--gray-500)",
+                      letterSpacing: 0,
+                      textTransform: "none",
+                      padding: "2px 7px",
+                      background: voiceOn ? "var(--blue)" : "var(--gray-100)",
+                      borderRadius: "10px",
+                      border: `1px solid ${voiceOn ? "var(--blue)" : "var(--border)"}`,
+                      transition: "all 0.18s",
+                    }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                      <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+                    </svg>
+                    Voice
+                  </span>
+                </div>
+
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`chat-bubble${msg.type === "ai" ? " ai" : ""}`}>
+                    {msg.type === "ai" && <div className="ai-tag">🤖 AI Tutor</div>}
+                    {msg.html
+                      ? <span dangerouslySetInnerHTML={{ __html: msg.text }} />
+                      : msg.text}
+                  </div>
+                ))}
+              </div>
+
+              {/* Voice mode panel */}
+              <div className={`voice-mode-panel${voiceOn ? " open" : ""}`} id="voice-mode-panel">
+                <div
+                  className={`voice-orb${isListening ? " listening" : ""}`}
+                  id="voice-orb"
+                  onClick={toggleListening}
+                  title="Tap to speak"
+                  style={{
+                    background: isListening ? "var(--blue)" : "var(--white)",
+                    borderColor: isListening ? "var(--indigo-dark)" : "var(--blue)",
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={isListening ? "#fff" : "var(--blue)"}
+                    strokeWidth="2"
+                    style={{ width: 20, height: 20 }}
+                  >
+                    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+                  </svg>
+                </div>
+                <div className="voice-mode-label" style={{ color: "var(--blue)" }}>
+                  {isListening ? "Listening…" : "Tap to speak"}
+                </div>
+                <div className="voice-mode-tip">Your voice will be transcribed into the chat</div>
+              </div>
+
+              {/* Chat input */}
+              <div className="rp-chat-input-area">
+                <div className="voice-row">
+                  <span className="voice-row-label">Ask your AI Tutor anything</span>
+                </div>
+                <div className="chat-input-row">
+                  <textarea
+                    ref={chatTextareaRef}
+                    className="chat-input"
+                    id="chat-input-box"
+                    placeholder="Type your question..."
+                    rows={1}
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={handleChatKey}
+                  />
+                  <button className="chat-send" onClick={sendChat}>↑</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
+
       </div>
-
-      <div className="lesson-card">
-        <p className="lesson-kicker">{hasActiveTarget ? "Explaining now" : "Ready to explain"}</p>
-        <h3>{activeStep.label}</h3>
-        <p>{activeStep.narration}</p>
-        <div className="lesson-progress" aria-label="Lesson progress">
-          {lessonSteps.map((step, index) => (
-            <span
-              key={step.target}
-              className={index <= lessonIndex ? "complete" : ""}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="release-card">
-        <span>{knowledgeMode ? "Help Center extraction" : "Content-to-lesson engine"}</span>
-        <strong>
-          {knowledgeMode
-            ? backendLessonTitle || helpCenterTutorial.title
-            : releaseMode
-              ? backendLessonTitle || currentUpdate.title
-              : "Lofty 4.40 ready to teach"}
-        </strong>
-        <p>
-          {knowledgeMode
-            ? backendLessonTitle
-              ? `Loaded from Insforge. Validation: ${activeBackendLesson.validation_status}.`
-              : `Source: ${helpCenterTutorial.source}. Extracted ${helpCenterTutorial.extractedSteps.length} written steps into a live walkthrough.`
-            : releaseMode
-              ? backendLessonTitle
-                ? `Loaded from Insforge. Validation: ${activeBackendLesson.validation_status}.`
-                : currentUpdate.value
-              : "Use the latest help article as source material for guided lessons."}
-        </p>
-      </div>
-
-      <BackendStatusCard
-        status={backendStatus}
-        currentUser={currentUser}
-        voiceStatus={voiceStatus}
-        onGenerateBackendLesson={onGenerateBackendLesson}
-      />
-
-      {knowledgeMode ? (
-        <div className="extracted-steps">
-          {helpCenterTutorial.extractedSteps.map((step, index) => (
-            <article key={step}>
-              <span>{index + 1}</span>
-              <p>{step}</p>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="transcript">
-        {messages.map((message, index) => (
-          <article key={`${message.speaker}-${index}`} className={message.speaker === "You" ? "user-message" : ""}>
-            <span>{message.speaker}</span>
-            <p>{message.text}</p>
-          </article>
-        ))}
-      </div>
-
-      <form className="question-form" onSubmit={onAskQuestion}>
-        <input
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Ask: What is a lead score?"
-        />
-        <button type="submit">Ask</button>
-      </form>
-
-      <div className="academy-actions">
-        <button onClick={onNextStep}>
-          {hasResumeTarget ? "Resume lesson" : hasActiveTarget ? "Next step" : "Start lesson"}
-        </button>
-        <button onClick={onExplainRelease}>Explain update</button>
-        <button onClick={onExplainHelpTutorial}>Extract tutorial</button>
-      </div>
-    </aside>
-  );
-}
-
-function BackendStatusCard({ status, currentUser, voiceStatus, onGenerateBackendLesson }) {
-  const statusLabel = status.loading
-    ? "Checking..."
-    : status.connected
-      ? "Connected"
-      : status.configured
-        ? "Needs attention"
-        : "Not configured";
-
-  return (
-    <div className="backend-card">
-      <div className="backend-card-head">
-        <span>Insforge backend</span>
-        <strong>{statusLabel}</strong>
-      </div>
-      <div className="backend-metrics">
-        <span>Lessons <strong>{status.lessonCount}</strong></span>
-        <span>Sources <strong>{status.sourceCount}</strong></span>
-        <span>Q&A <strong>{status.questionCount}</strong></span>
-        <span>Progress <strong>{status.progressCount}</strong></span>
-      </div>
-      <p>
-        Demo login: <strong>{currentUser?.email || "not selected"}</strong>
-      </p>
-      <p>
-        ElevenLabs: <strong>{voiceStatus.label}</strong>
-      </p>
-      {voiceStatus.error ? <p className="backend-error">{voiceStatus.error}</p> : null}
-      <p>
-        Storage artifacts: <strong>{status.storageArtifactCount}</strong>
-        {status.lastAction ? ` · ${status.lastAction}` : ""}
-      </p>
-      {status.error ? <p className="backend-error">{status.error}</p> : null}
-      <button
-        type="button"
-        onClick={onGenerateBackendLesson}
-        disabled={!status.configured || status.generating}
-      >
-        {status.generating ? "Generating..." : "Generate saved lesson"}
-      </button>
     </div>
   );
 }
