@@ -485,18 +485,21 @@ Current status:
 
 This is required for the Insforge track and makes the demo feel like a real SaaS feature.
 
-### Phase 4 - Golden Path Lesson
+### Phase 4 - Academy Mode Golden Path
 
 Lesson 1: "Your AI-Powered Dashboard"
 
 Steps:
 
-1. Open dashboard.
-2. Explain "Need Keep In Touch."
-3. Highlight "Today's Opportunities."
-4. Move the AI cursor to High Interest / Likely Sellers / Back to Site.
-5. Explain why these are AI-prioritized signals.
-6. Move toward lead score.
+1. Open the dashboard.
+2. Click **Turn on Academy Mode**.
+3. Show the three-column learning workspace:
+   left course list/completion, middle simulator, right AI chat history and voice.
+4. Explain "Need Keep In Touch."
+5. Highlight "Today's Opportunities."
+6. Move the AI cursor to High Interest / Likely Sellers / Back to Site.
+7. Explain why these are AI-prioritized signals.
+8. Move toward lead score.
 
 Interrupt:
 
@@ -512,11 +515,11 @@ This is the demo's core proof.
 
 Current status:
 
-- Started in the prototype: the lesson now begins on "Need Keep In Touch," moves through
-  AI opportunity signals, supports the lead-score Q&A interruption, and returns with a
-  "Resume lesson" action.
-- Next polish: make the golden path feel more cinematic with tighter narration, optional
-  ElevenLabs voice output, and a final persisted-event proof in the backend card.
+- Implemented in the prototype: the main dashboard has a **Turn on Academy Mode** button.
+  Academy Mode opens a left course list, middle Lofty simulator, and right AI chat panel.
+- The same workspace includes onboarding lessons, release-note lesson, Help Center
+  extraction, Q&A interrupt, Resume lesson, ElevenLabs voice, and Insforge backend proof.
+- Next polish: redesign the Academy Mode visuals and tighten the demo narration.
 
 ### Phase 5 - Content-to-Lesson Generator
 
@@ -533,6 +536,15 @@ Add an internal admin page:
 This does not need to be fully autonomous behind the scenes. It needs to demonstrate
 the product direction clearly.
 
+Current status:
+
+- Done locally and against Insforge: admin demo login opens a Content-to-Lesson Studio,
+  the prefilled release JSON generates a saved draft through the `generate-lesson` Edge
+  Function, the preview renders generated lesson steps, and "Publish to new agents"
+  updates the saved lesson to `published`.
+- Browser check verified the generated lesson appears as `draft` before publishing and
+  `published` after publishing.
+
 ### Phase 6 - Voice
 
 Use ElevenLabs for voice output if implementation time allows.
@@ -542,6 +554,13 @@ Rules:
 - Typed question must work even if voice input fails.
 - TTS failure should fall back to text transcript.
 - Do not let voice integration block the main demo.
+
+Current status:
+
+- Done: the tutor has a Voice button that calls the Insforge `speak-lesson` Edge
+  Function, which calls ElevenLabs server-side and returns playable MP3 audio.
+- Security note: keep the ElevenLabs key as an Insforge secret only; do not expose it in
+  frontend `VITE_` variables or commit it to the repo.
 
 ### Phase 7 - Live Deploy, Video, And Pitch
 
@@ -697,13 +716,12 @@ Build our own controlled web app instead.
 ## Final Build Priority
 
 1. Lofty-style CRM sandbox
-2. Live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt
+2. Academy Mode as the main judged surface: course list, simulator, AI chat, voice, and Q&A
 3. Insforge demo profiles + Postgres persistence
-4. Content-to-lesson demo saved through Insforge
-5. Golden path lesson
+4. Golden path onboarding lesson
+5. Release-note and Help Center lessons inside Academy Mode
 6. Live deployment
-7. ElevenLabs voice output
-8. Demo polish and recording
-9. Slides / written rationale
+7. Demo polish and recording
+8. Slides / written rationale
 
 If only one thing is perfect, make the interrupt demo perfect.

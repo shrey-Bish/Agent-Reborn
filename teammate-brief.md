@@ -38,8 +38,8 @@ The demo has four product pillars:
    scores, and supporting CRM details.
 
 2. **Live AI guidance layer**
-   The user-facing magic: tutor panel, AI cursor, highlights, numbered red boxes/arrows,
-   Q&A interrupt, lesson progress, and voice output.
+   The user-facing magic now lives inside **Academy Mode**: left course list, center CRM
+   simulator, right AI chat history, tutor actions, Q&A interrupt, and voice output.
 
 3. **Content-to-lesson engine**
    Release notes and Help Center tutorials are both source content. The system extracts
@@ -113,11 +113,12 @@ like lessons generated, users onboarded, and questions answered.
 This is the moment the demo must nail:
 
 1. New user starts the dashboard onboarding lesson.
-2. AI explains Today's Opportunities.
-3. User asks: "Wait, what is a lead score?"
-4. AI pauses the lesson.
-5. AI cursor moves to Today's New Leads and highlights the score chip.
-6. AI opens or reveals the lead-score explanation.
+2. User clicks **Turn on Academy Mode** from the dashboard.
+3. The screen changes into a course workspace: lessons/completion on the left, simulator
+   in the middle, AI chat and voice on the right.
+4. AI explains Today's Opportunities.
+5. User asks: "Wait, what is a lead score?"
+6. AI pauses the lesson and highlights Emily Wilson's score chip.
 7. AI explains why the lead has that score.
 8. AI says, "Back to where we were," and returns to the dashboard lesson.
 
@@ -134,22 +135,21 @@ Needs:
   Automation, Reporting, Marketplace, AI Copilots, search, avatar
 - Right utility rail
 - "Good Evening, Shrey!" greeting and Today's Priorities control
-- Onboarding mode banner
+- Button: **Turn on Academy Mode**
 - Need Keep In Touch widget
 - Today's Opportunities widget
 - Today's New Leads with Emily Wilson, score 59
 - Active Transactions or Upcoming Showings as supporting CRM realism
 
-### People / Lead Profile
+### Academy Mode
 
 Needs:
 
-- Lead list with scores
-- Emily Wilson row
-- Lead profile drawer
-- Score 59 explanation
-- Recent activity: viewed listings, returned to site, saved search
-- Current Smart Plan
+- Left panel with course lessons and completion state
+- Middle panel with the Lofty CRM simulator and red-box/cursor guidance
+- Right panel with AI chat history, Q&A input, Voice button, lesson actions, and backend proof
+- Release lesson included in the course list, not treated as a separate product
+- Help Center extraction available as supporting proof, but not the main story
 
 ### Content-to-Lesson Generator
 
@@ -193,8 +193,9 @@ trust, while experienced agents also need ongoing value after product updates.
 
 **Solution:** A continuous AI product education layer operates the CRM, explains AI
 decisions, answers questions in context, and turns release notes or Help Center tutorials
-into guided lessons. Insforge powers auth, lesson storage, release/tutorial persistence,
-progress tracking, and Q&A logging.
+into guided lessons. Insforge powers demo profiles, lesson storage, release/tutorial
+persistence, progress tracking, Q&A logging, and ElevenLabs narration through Edge
+Functions.
 
 **Clicky comparison:** We borrow the interaction model of talking, pointing, and guiding,
 but we do not build a general desktop screen buddy. Our cursor/highlight layer is scoped
@@ -219,9 +220,9 @@ rollout, triggered lessons for users who have not adopted AI features.
 1. Make the Lofty-style CRM sandbox look credible.
 2. Build the live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt.
 3. Wire Insforge demo profiles/Postgres persistence and log lesson/Q&A state.
-4. Build the content-to-lesson demo using Lofty 4.40 and the Aidentified Help Center article.
-5. Deploy the live app.
-6. Add ElevenLabs voice output if time allows.
+4. Make Academy Mode the main judged flow: course list, simulator, AI chat, voice, and Q&A.
+5. Keep release-note and Help Center lessons inside Academy Mode.
+6. Deploy the live app.
 7. Polish and record the demo.
 
 ## Things To Avoid

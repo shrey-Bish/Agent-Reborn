@@ -157,3 +157,30 @@ export async function generateLessonFromContent(source) {
 
   return result.data;
 }
+
+export async function publishLesson(lessonId) {
+  if (!lessonId || !isInsforgeConfigured) return null;
+
+  const client = requireInsforge();
+  const result = await client.database
+    .from("lessons")
+    .update({ published: true })
+    .eq("id", lessonId)
+    .select()
+    .single();
+
+  return assertOk(result, "Unable to publish lesson.");
+}
+
+export async function synthesizeLessonSpeech(text) {
+  const client = requireInsforge();
+  const result = await client.functions.invoke("speak-lesson", {
+    body: { text },
+  });
+
+  if (result.error) {
+    throw new Error(result.error.message || "Unable to synthesize lesson voice.");
+  }
+
+  return result.data;
+}

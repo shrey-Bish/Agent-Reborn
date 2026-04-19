@@ -121,7 +121,7 @@ export default async function handler(req: Request): Promise<Response> {
       audience: generatedLesson.audience,
       lesson_json: generatedLesson.lesson_json,
       validation_status: "validated_against_sandbox",
-      published: true,
+      published: false,
     })
     .select()
     .single();

@@ -7,8 +7,10 @@ import {
   findLessonBySourceType,
   generateLessonFromContent,
   isInsforgeConfigured,
+  publishLesson,
   recordLessonProgress,
   recordQuestionEvent,
+  synthesizeLessonSpeech,
 } from "./insforgeBackend";
 
 const releaseUpdates = [
@@ -50,6 +52,26 @@ const helpCenterTutorial = {
   ],
   liveSummary:
     "I extracted this from the written Help Center tutorial. In the live product, I would convert each written instruction into a red box, an arrow, and a spoken step on the current screen.",
+};
+
+const studioReleaseTemplate = {
+  feature_name: "AI Follow-Up Suggestions",
+  target_users: ["new agents", "team admins"],
+  goal: "Teach agents how to review and send AI-suggested follow-ups.",
+  entry_point: "People > Lead Profile > Follow-Up Suggestions",
+  user_value: "Helps agents respond faster to warm leads.",
+  key_actions: [
+    "open a high-score lead",
+    "review the AI follow-up suggestion",
+    "edit the message",
+    "send or schedule the follow-up",
+  ],
+  trust_notes: [
+    "explain why the AI suggested this lead",
+    "show that the agent can edit before sending",
+    "make clear that AI does not send without approval",
+  ],
+  success_metric: "First AI follow-up reviewed or sent",
 };
 
 const lessonSteps = [
@@ -101,6 +123,9 @@ function App() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [resumeLessonIndex, setResumeLessonIndex] = useState(null);
   const [question, setQuestion] = useState("");
+  const [academyMode, setAcademyMode] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation,
+  );
   const [tutorOpen, setTutorOpen] = useState(
     startWithHelpExtraction || startWithReleaseExplanation,
   );
@@ -111,6 +136,18 @@ function App() {
   const [activeBackendLesson, setActiveBackendLesson] = useState(null);
   const [demoProfiles, setDemoProfiles] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const [studioSourceText, setStudioSourceText] = useState(() =>
+    JSON.stringify(studioReleaseTemplate, null, 2),
+  );
+  const [studioResult, setStudioResult] = useState(null);
+  const [studioError, setStudioError] = useState("");
+  const [studioSaving, setStudioSaving] = useState(false);
+  const [studioPublishing, setStudioPublishing] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState({
+    loading: false,
+    label: "Voice ready",
+    error: "",
+  });
   const [backendStatus, setBackendStatus] = useState({
     configured: isInsforgeConfigured,
     connected: false,
@@ -199,6 +236,7 @@ function App() {
 
   function demoLogout() {
     setCurrentUser(null);
+    setAcademyMode(false);
     setTutorOpen(false);
     setActiveTarget(null);
     setLeadInsightOpen(false);
@@ -251,12 +289,14 @@ function App() {
 
   function guideTo(target, options = {}) {
     setTutorOpen(true);
+    setAcademyMode(true);
     setActiveTarget(target);
     setLeadInsightOpen(target === "score-chip" || options.showLeadInsight === true);
     setCursorPulse((value) => value + 1);
   }
 
   function openAcademy() {
+    setAcademyMode(true);
     setTutorOpen(true);
     setActiveTarget(null);
     setLessonIndex(0);
@@ -265,6 +305,40 @@ function App() {
     setKnowledgeMode(false);
     setReleaseMode(false);
     setActiveBackendLesson(null);
+  }
+
+  function closeAcademy() {
+    setAcademyMode(false);
+    setTutorOpen(false);
+    setActiveTarget(null);
+    setResumeLessonIndex(null);
+    setLeadInsightOpen(false);
+  }
+
+  function selectLessonStep(index) {
+    const step = lessonSteps[index];
+    const lesson =
+      activeBackendLesson ||
+      findLessonBySourceType(backendLessons, "release_note") ||
+      backendLessons[0] ||
+      null;
+
+    setAcademyMode(true);
+    setTutorOpen(true);
+    setActiveBackendLesson(lesson);
+    setLessonIndex(index);
+    setResumeLessonIndex(null);
+    setKnowledgeMode(false);
+    setReleaseMode(false);
+    guideTo(step.target);
+    recordProgressFor(lesson, index);
+    setMessages((items) => [
+      ...items,
+      {
+        speaker: "Academy",
+        text: step.narration,
+      },
+    ]);
   }
 
   function nextStep() {
@@ -411,6 +485,109 @@ function App() {
     }
   }
 
+  async function generateStudioLesson() {
+    if (!isInsforgeConfigured) {
+      setStudioError("Add Insforge env vars before generating a saved lesson.");
+      return;
+    }
+
+    setStudioSaving(true);
+    setStudioError("");
+
+    try {
+      const parsed = JSON.parse(studioSourceText);
+      const title = parsed.feature_name || parsed.title || "Lofty Release Lesson";
+      const result = await generateLessonFromContent({
+        type: "release_note",
+        title,
+        source_url:
+          "https://help.lofty.com/hc/en-us/articles/48927271391259-Feature-Updates-for-Lofty-4-40",
+        raw_content: JSON.stringify(parsed, null, 2),
+      });
+      setStudioResult(result);
+      setActiveBackendLesson(result.lesson);
+      setMessages((items) => [
+        ...items,
+        {
+          speaker: "Academy",
+          text: `Admin generated and saved "${result.lesson.title}" through Insforge.`,
+        },
+      ]);
+      await refreshBackendStatus("Admin generated a lesson draft.");
+    } catch (error) {
+      setStudioError(
+        error instanceof SyntaxError
+          ? "The release note JSON is not valid yet."
+          : error.message,
+      );
+    } finally {
+      setStudioSaving(false);
+    }
+  }
+
+  async function publishStudioLesson() {
+    const lessonId = studioResult?.lesson?.id;
+    if (!lessonId) return;
+
+    setStudioPublishing(true);
+    setStudioError("");
+
+    try {
+      const lesson = await publishLesson(lessonId);
+      setStudioResult((result) => ({ ...result, lesson }));
+      setActiveBackendLesson(lesson);
+      setMessages((items) => [
+        ...items,
+        {
+          speaker: "Academy",
+          text: `"${lesson.title}" is published for the agent lesson flow.`,
+        },
+      ]);
+      await refreshBackendStatus("Lesson published to agents.");
+    } catch (error) {
+      setStudioError(error.message);
+    } finally {
+      setStudioPublishing(false);
+    }
+  }
+
+  async function playLessonVoice() {
+    if (!isInsforgeConfigured) {
+      setVoiceStatus({
+        loading: false,
+        label: "Voice unavailable",
+        error: "Add Insforge env vars before using ElevenLabs voice.",
+      });
+      return;
+    }
+
+    const latestAcademyMessage = [...messages]
+      .reverse()
+      .find((message) => message.speaker === "Academy");
+    const voiceText =
+      latestAcademyMessage?.text ||
+      activeStep.narration ||
+      "Welcome to Agent Reborn. I can guide you through Lofty workflows.";
+
+    setVoiceStatus({ loading: true, label: "Generating voice...", error: "" });
+
+    try {
+      const audio = await synthesizeLessonSpeech(voiceText);
+      const player = new Audio(`data:${audio.mimeType};base64,${audio.audioBase64}`);
+      setVoiceStatus({ loading: false, label: "Playing voice", error: "" });
+      player.addEventListener("ended", () => {
+        setVoiceStatus({ loading: false, label: "Voice ready", error: "" });
+      });
+      await player.play();
+    } catch (error) {
+      setVoiceStatus({
+        loading: false,
+        label: "Voice failed",
+        error: error.message,
+      });
+    }
+  }
+
   return (
     <main className="lofty-shell">
       <TopNav currentUser={currentUser} onOpenAcademy={openAcademy} onLogout={demoLogout} />
@@ -421,18 +598,66 @@ function App() {
           onLogin={demoLogin}
         />
       ) : null}
-      <div className="workspace">
-        <Dashboard
-          userName={currentUser?.name || "Shrey Demo"}
-          activeTarget={tutorOpen ? activeTarget : null}
-          cursorLabel={activeCursorLabel}
-          cursorPulse={cursorPulse}
-          leadInsightOpen={leadInsightOpen}
-          onExplainRelease={explainRelease}
-        />
-        <RightRail />
+      <div className={`workspace ${academyMode ? "academy-workspace" : ""}`}>
+        {currentUser?.role === "admin" ? (
+          <ContentLessonStudio
+            sourceText={studioSourceText}
+            result={studioResult}
+            status={backendStatus}
+            error={studioError}
+            saving={studioSaving}
+            publishing={studioPublishing}
+            onSourceTextChange={setStudioSourceText}
+            onGenerate={generateStudioLesson}
+            onPublish={publishStudioLesson}
+          />
+        ) : academyMode ? (
+          <AcademyMode
+            userName={currentUser?.name || "Shrey Demo"}
+            activeTarget={tutorOpen ? activeTarget : null}
+            cursorLabel={activeCursorLabel}
+            cursorPulse={cursorPulse}
+            leadInsightOpen={leadInsightOpen}
+            lessonIndex={lessonIndex}
+            activeTargetName={activeTarget}
+            releaseMode={releaseMode}
+            knowledgeMode={knowledgeMode}
+            backendLessons={backendLessons}
+            activeStep={activeStep}
+            messages={messages}
+            question={question}
+            currentUpdate={currentUpdate}
+            helpCenterTutorial={helpCenterTutorial}
+            activeBackendLesson={activeBackendLesson}
+            backendStatus={backendStatus}
+            currentUser={currentUser}
+            voiceStatus={voiceStatus}
+            hasActiveTarget={Boolean(activeTarget)}
+            hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
+            setQuestion={setQuestion}
+            onSelectLessonStep={selectLessonStep}
+            onAskQuestion={askQuestion}
+            onNextStep={nextStep}
+            onExplainRelease={explainRelease}
+            onExplainHelpTutorial={explainHelpTutorial}
+            onGenerateBackendLesson={generateBackendLesson}
+            onPlayVoice={playLessonVoice}
+            onClose={closeAcademy}
+          />
+        ) : (
+          <Dashboard
+            userName={currentUser?.name || "Shrey Demo"}
+            activeTarget={tutorOpen ? activeTarget : null}
+            cursorLabel={activeCursorLabel}
+            cursorPulse={cursorPulse}
+            leadInsightOpen={leadInsightOpen}
+            onExplainRelease={explainRelease}
+            onOpenAcademyMode={openAcademy}
+          />
+        )}
+        {!academyMode ? <RightRail /> : null}
       </div>
-      {tutorOpen ? (
+      {tutorOpen && !academyMode ? (
         <AcademyTutor
           activeStep={activeStep}
           lessonIndex={lessonIndex}
@@ -445,6 +670,7 @@ function App() {
           activeBackendLesson={activeBackendLesson}
           backendStatus={backendStatus}
           currentUser={currentUser}
+          voiceStatus={voiceStatus}
           hasActiveTarget={Boolean(activeTarget)}
           hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
           setQuestion={setQuestion}
@@ -453,6 +679,7 @@ function App() {
           onExplainRelease={explainRelease}
           onExplainHelpTutorial={explainHelpTutorial}
           onGenerateBackendLesson={generateBackendLesson}
+          onPlayVoice={playLessonVoice}
           onClose={() => setTutorOpen(false)}
         />
       ) : null}
@@ -523,6 +750,159 @@ function DemoLogin({ profiles, backendConnected, onLogin }) {
   );
 }
 
+function AcademyMode({
+  userName,
+  activeTarget,
+  activeTargetName,
+  cursorLabel,
+  cursorPulse,
+  leadInsightOpen,
+  lessonIndex,
+  releaseMode,
+  knowledgeMode,
+  backendLessons,
+  activeStep,
+  messages,
+  question,
+  currentUpdate,
+  helpCenterTutorial,
+  activeBackendLesson,
+  backendStatus,
+  currentUser,
+  voiceStatus,
+  hasActiveTarget,
+  hasResumeTarget,
+  setQuestion,
+  onSelectLessonStep,
+  onAskQuestion,
+  onNextStep,
+  onExplainRelease,
+  onExplainHelpTutorial,
+  onGenerateBackendLesson,
+  onPlayVoice,
+  onClose,
+}) {
+  return (
+    <section className="academy-mode" aria-label="Lofty Academy Mode">
+      <CourseSidebar
+        lessonIndex={lessonIndex}
+        activeTarget={activeTargetName}
+        releaseMode={releaseMode}
+        knowledgeMode={knowledgeMode}
+        backendLessons={backendLessons}
+        onSelectLessonStep={onSelectLessonStep}
+        onExplainRelease={onExplainRelease}
+        onExplainHelpTutorial={onExplainHelpTutorial}
+      />
+      <div className="academy-simulator">
+        <div className="simulator-topbar">
+          <div>
+            <span>Academy Mode</span>
+            <strong>Interactive Lofty simulator</strong>
+          </div>
+          <button onClick={onClose}>Exit</button>
+        </div>
+        <Dashboard
+          userName={userName}
+          activeTarget={activeTarget}
+          cursorLabel={cursorLabel}
+          cursorPulse={cursorPulse}
+          leadInsightOpen={leadInsightOpen}
+          onExplainRelease={onExplainRelease}
+        />
+      </div>
+      <AcademyTutor
+        docked
+        activeStep={activeStep}
+        lessonIndex={lessonIndex}
+        messages={messages}
+        question={question}
+        releaseMode={releaseMode}
+        knowledgeMode={knowledgeMode}
+        currentUpdate={currentUpdate}
+        helpCenterTutorial={helpCenterTutorial}
+        activeBackendLesson={activeBackendLesson}
+        backendStatus={backendStatus}
+        currentUser={currentUser}
+        voiceStatus={voiceStatus}
+        hasActiveTarget={hasActiveTarget}
+        hasResumeTarget={hasResumeTarget}
+        setQuestion={setQuestion}
+        onAskQuestion={onAskQuestion}
+        onNextStep={onNextStep}
+        onExplainRelease={onExplainRelease}
+        onExplainHelpTutorial={onExplainHelpTutorial}
+        onGenerateBackendLesson={onGenerateBackendLesson}
+        onPlayVoice={onPlayVoice}
+        onClose={onClose}
+      />
+    </section>
+  );
+}
+
+function CourseSidebar({
+  lessonIndex,
+  activeTarget,
+  releaseMode,
+  knowledgeMode,
+  backendLessons,
+  onSelectLessonStep,
+  onExplainRelease,
+  onExplainHelpTutorial,
+}) {
+  const releaseLesson = findLessonBySourceType(backendLessons, "release_note");
+  const helpLesson = findLessonBySourceType(backendLessons, "help_center_article");
+  const completedCoreCount = activeTarget
+    ? Math.min(lessonIndex + 1, lessonSteps.length)
+    : 0;
+  const totalLessons = lessonSteps.length + 2;
+  const completedCount =
+    completedCoreCount + (releaseMode ? 1 : 0) + (knowledgeMode ? 1 : 0);
+
+  return (
+    <aside className="course-sidebar" aria-label="Academy course list">
+      <div className="course-header">
+        <span>Lofty Academy</span>
+        <h2>Onboarding Course</h2>
+        <p>{completedCount}/{totalLessons} lessons touched</p>
+        <div className="course-meter">
+          <span style={{ width: `${(completedCount / totalLessons) * 100}%` }} />
+        </div>
+      </div>
+
+      <div className="course-section">
+        <span>Core onboarding</span>
+        {lessonSteps.map((step, index) => {
+          const isActive = activeTarget === step.target;
+          const isComplete = activeTarget && index < lessonIndex;
+          return (
+            <button
+              key={step.target}
+              className={isActive ? "active" : ""}
+              onClick={() => onSelectLessonStep(index)}
+            >
+              <strong>{step.label}</strong>
+              <small>{isComplete ? "Complete" : isActive ? "In progress" : "Lesson"}</small>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="course-section">
+        <span>Updates and docs</span>
+        <button className={releaseMode ? "active" : ""} onClick={onExplainRelease}>
+          <strong>Lofty 4.40 Release</strong>
+          <small>{releaseLesson ? "Saved in Insforge" : "Release lesson"}</small>
+        </button>
+        <button className={knowledgeMode ? "active" : ""} onClick={onExplainHelpTutorial}>
+          <strong>Help Center Tutorial</strong>
+          <small>{helpLesson ? "Extracted lesson" : "Documentation lesson"}</small>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function Dashboard({
   userName,
   activeTarget,
@@ -530,6 +910,7 @@ function Dashboard({
   cursorPulse,
   leadInsightOpen,
   onExplainRelease,
+  onOpenAcademyMode,
 }) {
   return (
     <section className="dashboard" aria-label="Lofty dashboard mock">
@@ -546,6 +927,11 @@ function Dashboard({
           <button className="dashboard-select">My Dashboard</button>
         </div>
         <div className="dashboard-actions">
+          {onOpenAcademyMode ? (
+            <button className="academy-mode-button" onClick={onOpenAcademyMode}>
+              Turn on Academy Mode
+            </button>
+          ) : null}
           <button className="priority-select">Today's Priorities</button>
           <button className="grid-button" aria-label="Dashboard grid">
             <span />
@@ -637,6 +1023,145 @@ function Dashboard({
             <TaskStat label="Other" color="orange" />
           </div>
         </Card>
+      </div>
+    </section>
+  );
+}
+
+function ContentLessonStudio({
+  sourceText,
+  result,
+  status,
+  error,
+  saving,
+  publishing,
+  onSourceTextChange,
+  onGenerate,
+  onPublish,
+}) {
+  const lesson = result?.lesson;
+  const lessonStepsPreview = lesson?.lesson_json?.steps || [];
+  const generatedAt = result?.source?.created_at
+    ? new Date(result.source.created_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
+  return (
+    <section className="studio-page" aria-label="Content-to-Lesson Studio">
+      <div className="studio-hero">
+        <div>
+          <span>Agent Reborn Admin</span>
+          <h1>Content-to-Lesson Studio</h1>
+          <p>
+            Turn a Lofty release note or Help Center tutorial into a validated lesson,
+            save it to Insforge, and publish it into the agent education layer.
+          </p>
+        </div>
+        <div className="studio-status-card">
+          <span>Insforge proof</span>
+          <strong>{status.connected ? "Connected" : "Local fallback"}</strong>
+          <p>
+            {status.lessonCount} lessons · {status.sourceCount} sources ·{" "}
+            {status.questionCount} questions · {status.progressCount} progress rows
+          </p>
+        </div>
+      </div>
+
+      <div className="studio-grid">
+        <section className="studio-panel source-panel">
+          <div className="studio-panel-head">
+            <div>
+              <span>Source content</span>
+              <h2>Lofty 4.40 release JSON</h2>
+            </div>
+            <strong>Step 1</strong>
+          </div>
+          <textarea
+            value={sourceText}
+            onChange={(event) => onSourceTextChange(event.target.value)}
+            spellCheck="false"
+          />
+          {error ? <p className="studio-error">{error}</p> : null}
+          <button className="studio-primary" onClick={onGenerate} disabled={saving}>
+            {saving ? "Generating..." : "Generate + save lesson"}
+          </button>
+        </section>
+
+        <section className="studio-panel preview-panel">
+          <div className="studio-panel-head">
+            <div>
+              <span>Generated lesson</span>
+              <h2>{lesson?.title || "Waiting for generated preview"}</h2>
+            </div>
+            <strong>Step 2</strong>
+          </div>
+
+          {lesson ? (
+            <>
+              <div className="lesson-preview-meta">
+                <span>{lesson.audience}</span>
+                <span>{lesson.validation_status}</span>
+                <span>{lesson.published ? "published" : "draft"}</span>
+              </div>
+              <div className="lesson-preview-steps">
+                {lessonStepsPreview.map((step, index) => (
+                  <article key={`${step.label}-${index}`}>
+                    <span>{index + 1}</span>
+                    <div>
+                      <strong>{step.label}</strong>
+                      <p>{step.narration}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <p className="studio-save-proof">
+                Saved to Insforge{generatedAt ? ` at ${generatedAt}` : ""}. Refreshing
+                the app keeps this lesson in the backend counts.
+              </p>
+            </>
+          ) : (
+            <div className="preview-empty">
+              <strong>No lesson generated yet</strong>
+              <p>
+                The next click will call the Insforge Edge Function, insert the source,
+                insert the lesson, and return a preview for publishing.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section className="studio-panel publish-panel">
+          <div className="studio-panel-head">
+            <div>
+              <span>Publish flow</span>
+              <h2>Audience and proof</h2>
+            </div>
+            <strong>Step 3</strong>
+          </div>
+          <div className="publish-audience">
+            <article>
+              <span>New agents</span>
+              <strong>First login onboarding</strong>
+            </article>
+            <article>
+              <span>Experienced agents</span>
+              <strong>Release adoption prompt</strong>
+            </article>
+          </div>
+          <button
+            className="studio-primary publish-button"
+            onClick={onPublish}
+            disabled={!lesson || publishing}
+          >
+            {publishing ? "Publishing..." : lesson?.published ? "Republish to agents" : "Publish to new agents"}
+          </button>
+          <p>
+            For the video: generate the lesson, show the preview, publish, then switch
+            to the agent login and open AI Copilots to show the same education layer.
+          </p>
+        </section>
       </div>
     </section>
   );
@@ -748,6 +1273,7 @@ function RightRail() {
 }
 
 function AcademyTutor({
+  docked = false,
   activeStep,
   lessonIndex,
   messages,
@@ -759,6 +1285,7 @@ function AcademyTutor({
   activeBackendLesson,
   backendStatus,
   currentUser,
+  voiceStatus,
   hasActiveTarget,
   hasResumeTarget,
   setQuestion,
@@ -767,12 +1294,16 @@ function AcademyTutor({
   onExplainRelease,
   onExplainHelpTutorial,
   onGenerateBackendLesson,
+  onPlayVoice,
   onClose,
 }) {
   const backendLessonTitle = activeBackendLesson?.title;
 
   return (
-    <aside className="academy-panel" aria-label="Lofty Academy education layer">
+    <aside
+      className={`academy-panel ${docked ? "academy-panel-docked" : ""}`}
+      aria-label="Lofty Academy education layer"
+    >
       <div className="academy-header">
         <div>
           <span className="eyebrow">Lofty Academy</span>
@@ -780,6 +1311,14 @@ function AcademyTutor({
         </div>
         <div className="academy-header-actions">
           <span className="live-pill">Live lesson</span>
+          <button
+            className="voice-button"
+            onClick={onPlayVoice}
+            disabled={voiceStatus.loading}
+            title="Play ElevenLabs narration"
+          >
+            {voiceStatus.loading ? "Voice..." : "Voice"}
+          </button>
           <button className="close-academy" onClick={onClose} aria-label="Close Academy">×</button>
         </div>
       </div>
@@ -823,6 +1362,7 @@ function AcademyTutor({
       <BackendStatusCard
         status={backendStatus}
         currentUser={currentUser}
+        voiceStatus={voiceStatus}
         onGenerateBackendLesson={onGenerateBackendLesson}
       />
 
@@ -866,7 +1406,7 @@ function AcademyTutor({
   );
 }
 
-function BackendStatusCard({ status, currentUser, onGenerateBackendLesson }) {
+function BackendStatusCard({ status, currentUser, voiceStatus, onGenerateBackendLesson }) {
   const statusLabel = status.loading
     ? "Checking..."
     : status.connected
@@ -890,6 +1430,10 @@ function BackendStatusCard({ status, currentUser, onGenerateBackendLesson }) {
       <p>
         Demo login: <strong>{currentUser?.email || "not selected"}</strong>
       </p>
+      <p>
+        ElevenLabs: <strong>{voiceStatus.label}</strong>
+      </p>
+      {voiceStatus.error ? <p className="backend-error">{voiceStatus.error}</p> : null}
       <p>
         Storage artifacts: <strong>{status.storageArtifactCount}</strong>
         {status.lastAction ? ` · ${status.lastAction}` : ""}
