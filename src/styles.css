@@ -704,67 +704,232 @@ body.academy-active .dash-grid {
 .task-chip-val.email { color: var(--green); }
 .task-chip-val.other { color: var(--amber); }
 
-/* ════════════════════════════════
-   SMART PLANS VIEW
+/* ══════════════�/* ════════════════════════════════
+   SMART PLANS VIEW — Realistic
 ════════════════════════════════ */
-.view-page-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 24px; gap: 16px;
-}
-.view-page-title { font-size: 24px; font-weight: 700; color: var(--gray-900); }
-.view-page-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
-.view-page-action-btn {
-  background: var(--blue); color: #fff; border: none;
-  border-radius: 8px; padding: 8px 16px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  white-space: nowrap; flex-shrink: 0;
-  transition: background 0.18s;
-}
-.view-page-action-btn:hover { background: var(--indigo-dark); }
-.view-page-action-btn.outline {
-  background: var(--white); color: var(--gray-700);
-  border: 1px solid var(--border);
-}
-.view-page-action-btn.outline:hover { background: var(--gray-50); }
+.crm-view-smart-plans { padding: 0; }
 
-/* Smart Plans table */
-.smart-plans-table {
-  background: var(--white); border: 1px solid var(--border);
-  border-radius: 12px; overflow: hidden;
-}
-.spt-header-row {
-  display: flex; padding: 12px 16px;
+/* Sub-nav bar */
+.sp-subnav {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; height: 48px;
+  background: var(--white);
   border-bottom: 1px solid var(--border);
-  background: var(--gray-50);
 }
-.spt-row {
-  display: flex; padding: 14px 16px; align-items: center;
-  border-bottom: 1px solid var(--gray-100);
-  transition: background 0.15s;
+.sp-subnav-title {
+  font-size: 15px; font-weight: 600; color: var(--gray-900);
+  margin-right: 4px;
 }
-.spt-row:last-child { border-bottom: none; }
-.spt-row:hover { background: var(--gray-50); }
-.spt-col { font-size: 13px; color: var(--gray-700); }
-.spt-col.name {
-  flex: 2; font-weight: 500; color: var(--gray-900);
-  display: flex; align-items: center; gap: 8px;
+.sp-subnav-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px; color: var(--gray-500);
+  cursor: pointer; background: var(--white); font-family: inherit;
+  transition: border-color .15s, color .15s;
 }
-.spt-col.status { flex: 1; }
-.spt-col.num { flex: 0.7; text-align: center; }
-.spt-header-row .spt-col {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--gray-500);
+.sp-subnav-btn:hover { border-color: var(--gray-400); color: var(--gray-700); }
+.sp-tab-group {
+  display: flex; background: var(--gray-100);
+  border-radius: 8px; padding: 3px; margin: 0 auto;
 }
-.spt-plan-icon { font-size: 16px; }
-.spt-status-badge {
-  font-size: 11px; font-weight: 600;
-  padding: 2px 8px; border-radius: 5px;
+.sp-tab {
+  padding: 4px 16px; border-radius: 6px; font-size: 13px;
+  font-weight: 500; cursor: pointer; color: var(--gray-500);
+  transition: background .15s, color .15s;
+}
+.sp-tab.active {
+  background: var(--white); color: var(--blue);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.sp-create-btn {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 8px; padding: 7px 14px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background .15s;
+}
+.sp-create-btn:hover { background: var(--indigo-dark); }
+.sp-create-divider {
+  width: 1px; height: 16px; background: rgba(255,255,255,.3);
+}
+.sp-create-arrow { font-size: 10px; opacity: .8; }
+
+/* Layout: sidebar + main */
+.sp-layout {
+  display: flex; flex: 1;
+  min-height: calc(100% - 48px);
 }
 
-/* Plan creator */
+/* Sidebar */
+.sp-sidebar {
+  width: 200px; background: var(--white);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 10px 8px; flex-shrink: 0;
+}
+.sp-sidebar-search {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--gray-50); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 8px; margin-bottom: 8px;
+  font-size: 12px; color: var(--gray-400);
+}
+.sp-sidebar-item {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; border-radius: 6px; font-size: 12.5px;
+  font-weight: 500; cursor: pointer; color: var(--gray-700);
+  transition: background .15s; margin-bottom: 2px;
+}
+.sp-sidebar-item:hover { background: var(--gray-100); }
+.sp-sidebar-item.active { background: var(--blue-light); color: var(--blue); }
+.sp-sidebar-section {
+  font-size: 10px; font-weight: 600; color: var(--gray-400);
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 8px 8px 3px; display: flex;
+  align-items: center; justify-content: space-between;
+}
+.sp-sidebar-empty {
+  font-size: 11px; color: var(--gray-400); padding: 3px 8px 6px;
+}
+.sp-sidebar-footer {
+  margin-top: auto; padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.sp-add-folder-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 8px; border: 1px dashed var(--gray-300);
+  border-radius: 6px; font-size: 12px; color: var(--gray-500);
+  cursor: pointer; background: transparent; width: 100%;
+  font-family: inherit; transition: border-color .15s, color .15s;
+}
+.sp-add-folder-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Main area */
+.sp-main {
+  flex: 1; display: flex; flex-direction: column;
+  min-width: 0;
+}
+
+/* Toolbar */
+.sp-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+.sp-toolbar-search {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--gray-50); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 10px;
+  font-size: 12px; color: var(--gray-400); width: 170px;
+}
+.sp-filter-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--white);
+  font-size: 12px; color: var(--gray-600); cursor: pointer;
+  transition: border-color .15s;
+}
+.sp-filter-btn:hover { border-color: var(--gray-400); }
+.sp-caret { font-size: 10px; color: var(--gray-400); }
+.sp-toolbar-right {
+  margin-left: auto; display: flex; align-items: center; gap: 4px;
+}
+.sp-view-btn {
+  width: 28px; height: 28px; display: flex;
+  align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--white); cursor: pointer; color: var(--gray-400);
+  transition: border-color .15s, color .15s;
+}
+.sp-view-btn:hover { border-color: var(--gray-400); color: var(--gray-600); }
+.sp-view-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+/* Table */
+.sp-table-wrap { flex: 1; overflow-x: auto; }
+.sp-table {
+  width: 100%; border-collapse: collapse; min-width: 600px;
+}
+.sp-table thead tr {
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--border);
+}
+.sp-table th {
+  text-align: left; padding: 9px 12px;
+  font-size: 11px; font-weight: 600; color: var(--gray-500);
+  white-space: nowrap;
+}
+.sp-sort { color: var(--gray-300); margin-left: 3px; font-size: 10px; }
+.sp-table tbody tr {
+  border-bottom: 1px solid var(--gray-100);
+  background: var(--white); transition: background .12s;
+}
+.sp-table tbody tr:hover { background: var(--gray-50); }
+.sp-table td {
+  padding: 11px 12px; font-size: 12.5px; color: var(--gray-700);
+  vertical-align: middle;
+}
+.sp-plan-name {
+  font-weight: 600; color: var(--blue); cursor: pointer;
+}
+.sp-plan-name:hover { text-decoration: underline; }
+
+/* Checkbox */
+.sp-cb {
+  width: 14px; height: 14px; border: 1.5px solid var(--gray-300);
+  border-radius: 3px; cursor: pointer; background: var(--white);
+}
+
+/* Toggle */
+.sp-toggle {
+  width: 34px; height: 18px; background: var(--gray-300);
+  border-radius: 9px; position: relative; cursor: pointer;
+  transition: background .2s; flex-shrink: 0;
+}
+.sp-toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  transition: transform .2s;
+}
+.sp-toggle.on { background: var(--blue); }
+.sp-toggle.on::after { transform: translateX(16px); }
+
+/* Action icons */
+.sp-action-icons { display: flex; align-items: center; gap: 6px; }
+.sp-action-icon {
+  width: 26px; height: 26px; display: flex;
+  align-items: center; justify-content: center;
+  border-radius: 4px; cursor: pointer; color: var(--gray-400);
+  transition: background .12s, color .12s;
+}
+.sp-action-icon:hover { background: var(--gray-100); color: var(--gray-700); }
+
+/* Pagination */
+.sp-pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px;
+  border-top: 1px solid var(--border); background: var(--white);
+}
+.sp-page-input {
+  width: 32px; height: 26px; border: 1px solid var(--gray-300);
+  border-radius: 4px; text-align: center; font-size: 12px;
+  color: var(--gray-700); font-family: inherit; outline: none;
+}
+.sp-page-count {
+  width: 32px; height: 26px; border: 1px solid var(--gray-300);
+  border-radius: 4px; text-align: center; font-size: 12px;
+  color: var(--gray-700); line-height: 26px;
+}
+.sp-page-size {
+  display: flex; align-items: center; gap: 3px;
+  padding: 4px 8px; border: 1px solid var(--gray-300);
+  border-radius: 4px; font-size: 12px; color: var(--gray-700);
+  cursor: pointer;
+}
+
+/* Plan creator (kept from before) */
 .plan-creator-card {
   background: var(--white); border: 2px solid var(--blue-mid);
-  border-radius: 12px; padding: 20px; margin-bottom: 20px;
+  border-radius: 12px; padding: 20px; margin: 12px 16px;
   box-shadow: 0 4px 12px rgba(59,92,222,0.08);
 }
 .plan-creator-title {
@@ -785,6 +950,32 @@ body.academy-active .dash-grid {
 }
 .plan-creator-field input:focus,
 .plan-creator-field select:focus { border-color: var(--blue); }
+.plan-email-preview {
+  background: var(--gray-50); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+}
+.plan-email-step {
+  padding: 5px 0; font-size: 12px; color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-100);
+}
+.plan-email-step:last-child { border-bottom: none; }
+.plan-creator-actions { display: flex; gap: 8px; margin-top: 16px; }
+.plan-save-btn {
+  background: var(--blue); color: #fff; border: none;
+  border-radius: 8px; padding: 8px 20px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.18s;
+}
+.plan-save-btn:hover { background: var(--indigo-dark); }
+.plan-cancel-btn {
+  background: var(--white); color: var(--gray-700);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 20px; font-size: 13px; cursor: pointer;
+  transition: background 0.15s;
+}
+.plan-cancel-btn:hover { background: var(--gray-50); }
+
+r-field select:focus { border-color: var(--blue); }
 
 .plan-email-preview {
   background: var(--gray-50); border: 1px solid var(--border);
@@ -1055,3 +1246,245 @@ body.academy-active .release-features-grid {
   0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
   100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
 }
+/* V2 Smart Plans CSS from User */
+.crm-view-smart-plans-v2 {
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --blue-dark: #1d4ed8;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --white: #ffffff;
+  --sidebar-w: 230px;
+  --subnav-h: 56px;
+
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--gray-50);
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  color: var(--gray-700);
+}
+
+.crm-view-smart-plans-v2 * { box-sizing: border-box; }
+
+.crm-view-smart-plans-v2 .subnav {
+  height: var(--subnav-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  z-index: 99;
+}
+
+.crm-view-smart-plans-v2 .subnav-title {
+  font-size: 15px; font-weight: 600; color: var(--gray-900); margin-right: 6px;
+}
+
+.crm-view-smart-plans-v2 .subnav-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border: 1px solid var(--gray-200);
+  border-radius: 6px; font-size: 12px; color: var(--gray-500);
+  cursor: pointer; background: var(--white); transition: border-color .15s, color .15s;
+}
+.crm-view-smart-plans-v2 .subnav-btn:hover { border-color: var(--gray-400); color: var(--gray-700); }
+
+.crm-view-smart-plans-v2 .tab-group {
+  display: flex; background: var(--gray-100); border-radius: 8px; padding: 3px; margin: 0 auto;
+}
+
+.crm-view-smart-plans-v2 .tab {
+  padding: 4px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--gray-500); transition: background .15s, color .15s;
+}
+.crm-view-smart-plans-v2 .tab.active {
+  background: var(--white); color: var(--blue); box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+.crm-view-smart-plans-v2 .create-btn {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  background: var(--blue); color: var(--white); border: none;
+  border-radius: 8px; padding: 7px 15px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.crm-view-smart-plans-v2 .create-btn:hover { background: var(--blue-dark); }
+.crm-view-smart-plans-v2 .chevron { width: 1px; height: 18px; background: rgba(255,255,255,.35); margin: 0 2px; }
+.crm-view-smart-plans-v2 .arrow { font-size: 10px; opacity: .85; }
+
+.crm-view-smart-plans-v2 .layout {
+  display: flex; flex: 1; height: calc(100% - var(--subnav-h)); position: relative;
+}
+
+.crm-view-smart-plans-v2 .sidebar {
+  width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--gray-200);
+  display: flex; flex-direction: column; padding: 12px 10px; overflow-y: auto; transition: transform 0.3s;
+}
+
+.crm-view-smart-plans-v2 .sidebar-search {
+  display: flex; align-items: center; background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 7px; padding: 5px 9px; gap: 6px; margin-bottom: 10px;
+}
+.crm-view-smart-plans-v2 .sidebar-search svg { color: var(--gray-400); flex-shrink: 0; }
+.crm-view-smart-plans-v2 .sidebar-search input {
+  border: none; background: transparent; font-size: 12.5px; color: var(--gray-500); outline: none; width: 100%;
+}
+
+.crm-view-smart-plans-v2 .sidebar-item {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 7px;
+  font-size: 13px; font-weight: 500; cursor: pointer; color: var(--gray-700);
+  transition: background .15s; margin-bottom: 2px;
+}
+.crm-view-smart-plans-v2 .sidebar-item:hover { background: var(--gray-100); }
+.crm-view-smart-plans-v2 .sidebar-item.active { background: var(--blue-light); color: var(--blue); }
+
+.crm-view-smart-plans-v2 .sidebar-section {
+  font-size: 10.5px; font-weight: 600; color: var(--gray-400); text-transform: uppercase;
+  letter-spacing: .06em; padding: 10px 10px 4px; display: flex; align-items: center; justify-content: space-between;
+}
+.crm-view-smart-plans-v2 .sidebar-section svg { cursor: pointer; }
+
+.crm-view-smart-plans-v2 .sidebar-empty { font-size: 12px; color: var(--gray-400); padding: 4px 10px 8px; }
+.crm-view-smart-plans-v2 .sidebar-footer { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--gray-200); }
+
+.crm-view-smart-plans-v2 .add-folder-btn {
+  display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px dashed var(--gray-300);
+  border-radius: 7px; font-size: 12.5px; color: var(--gray-500); cursor: pointer; background: transparent;
+  width: 100%; transition: border-color .15s, color .15s;
+}
+.crm-view-smart-plans-v2 .add-folder-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.crm-view-smart-plans-v2 .main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+
+.crm-view-smart-plans-v2 .toolbar {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--white); border-bottom: 1px solid var(--gray-200);
+}
+.crm-view-smart-plans-v2 .toolbar-search {
+  display: flex; align-items: center; background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 7px; padding: 5px 10px; gap: 6px; width: 200px;
+}
+.crm-view-smart-plans-v2 .toolbar-search input {
+  border: none; background: transparent; font-size: 12.5px; color: var(--gray-500); outline: none; width: 100%;
+}
+.crm-view-smart-plans-v2 .filter-btn {
+  display: flex; align-items: center; gap: 5px; padding: 5px 11px; border: 1px solid var(--gray-200);
+  border-radius: 7px; background: var(--white); font-size: 12.5px; color: var(--gray-600); cursor: pointer; transition: border-color .15s;
+}
+.crm-view-smart-plans-v2 .filter-btn:hover { border-color: var(--gray-400); }
+.crm-view-smart-plans-v2 .filter-btn .caret { font-size: 10px; color: var(--gray-400); }
+.crm-view-smart-plans-v2 .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.crm-view-smart-plans-v2 .view-btn {
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white);
+  cursor: pointer; color: var(--gray-400); transition: border-color .15s, color .15s;
+}
+.crm-view-smart-plans-v2 .view-btn:hover { border-color: var(--gray-400); color: var(--gray-600); }
+.crm-view-smart-plans-v2 .view-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+.crm-view-smart-plans-v2 .table-wrap { flex: 1; overflow: auto; padding: 0; }
+.crm-view-smart-plans-v2 table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.crm-view-smart-plans-v2 thead tr { background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+.crm-view-smart-plans-v2 th {
+  text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 600; color: var(--gray-500); white-space: nowrap; user-select: none;
+}
+.crm-view-smart-plans-v2 th:first-child { width: 40px; }
+.crm-view-smart-plans-v2 .sort-icon { color: var(--gray-300); margin-left: 4px; font-size: 10px; }
+.crm-view-smart-plans-v2 tbody tr { border-bottom: 1px solid var(--gray-100); background: var(--white); transition: background .12s; }
+.crm-view-smart-plans-v2 tbody tr:hover { background: var(--gray-50); }
+.crm-view-smart-plans-v2 td { padding: 13px 14px; font-size: 13px; color: var(--gray-700); vertical-align: middle; }
+.crm-view-smart-plans-v2 td:first-child { width: 40px; }
+.crm-view-smart-plans-v2 .plan-name { font-weight: 600; color: var(--blue); cursor: pointer; }
+.crm-view-smart-plans-v2 .plan-name:hover { text-decoration: underline; }
+
+.crm-view-smart-plans-v2 .toggle {
+  width: 36px; height: 20px; background: var(--gray-300); border-radius: 10px; position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0;
+}
+.crm-view-smart-plans-v2 .toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s;
+}
+.crm-view-smart-plans-v2 .toggle.on { background: var(--blue); }
+.crm-view-smart-plans-v2 .toggle.on::after { transform: translateX(16px); }
+
+.crm-view-smart-plans-v2 .action-icons { display: flex; align-items: center; gap: 8px; }
+.crm-view-smart-plans-v2 .action-icon {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border-radius: 5px; cursor: pointer; color: var(--gray-400); transition: background .12s, color .12s;
+}
+.crm-view-smart-plans-v2 .action-icon:hover { background: var(--gray-100); color: var(--gray-700); }
+
+.crm-view-smart-plans-v2 .cb {
+  width: 15px; height: 15px; border: 1.5px solid var(--gray-300); border-radius: 3px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; background: var(--white); flex-shrink: 0;
+}
+
+.crm-view-smart-plans-v2 .pagination {
+  display: flex; align-items: center; justify-content: center; gap: 6px; padding: 14px;
+  border-top: 1px solid var(--gray-200); background: var(--white);
+}
+.crm-view-smart-plans-v2 .page-input {
+  width: 36px; height: 28px; border: 1px solid var(--gray-300); border-radius: 5px; text-align: center;
+  font-size: 12.5px; color: var(--gray-700); font-family: inherit; outline: none;
+}
+.crm-view-smart-plans-v2 .page-input:focus { border-color: var(--blue); }
+.crm-view-smart-plans-v2 .page-count {
+  width: 36px; height: 28px; border: 1px solid var(--gray-300); border-radius: 5px; text-align: center;
+  font-size: 12.5px; color: var(--gray-700); line-height: 28px;
+}
+.crm-view-smart-plans-v2 .page-size {
+  display: flex; align-items: center; gap: 3px; padding: 4px 9px; border: 1px solid var(--gray-300);
+  border-radius: 5px; font-size: 12.5px; color: var(--gray-700); cursor: pointer;
+}
+.crm-view-smart-plans-v2 .page-size .caret { font-size: 10px; color: var(--gray-400); }
+
+.crm-view-smart-plans-v2 .right-rail {
+  width: 42px; background: var(--white); border-left: 1px solid var(--gray-200);
+  display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 6px; z-index: 90;
+}
+.crm-view-smart-plans-v2 .rail-icon {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; cursor: pointer; color: var(--gray-400); font-size: 16px; transition: background .12s, color .12s;
+}
+.crm-view-smart-plans-v2 .rail-icon:hover { background: var(--gray-100); color: var(--gray-600); }
+
+.crm-view-smart-plans-v2 .collapse-handle {
+  position: absolute; left: calc(var(--sidebar-w) - 12px); top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; background: var(--white); border: 1px solid var(--gray-200); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 101;
+  color: var(--gray-400); font-size: 11px; box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+.crm-view-smart-plans-v2 .collapse-handle:hover { color: var(--gray-600); }
+
+
+/* ── SMART PLANS LIBRARY CSS ── */
+.crm-view-smart-plans-v2 .page-body { padding: 16px 20px; max-width: 100%; }
+.crm-view-smart-plans-v2 .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 1200px) { .crm-view-smart-plans-v2 .cards-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px)  { .crm-view-smart-plans-v2 .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .crm-view-smart-plans-v2 .cards-grid { grid-template-columns: 1fr; } }
+.crm-view-smart-plans-v2 .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 10px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 10px; transition: box-shadow .15s, border-color .15s; min-height: 190px; }
+.crm-view-smart-plans-v2 .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); border-color: var(--gray-300); }
+.crm-view-smart-plans-v2 .card-title { font-size: 13.5px; font-weight: 600; color: var(--gray-900); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crm-view-smart-plans-v2 .card-lead { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-500); margin-top: -4px; }
+.crm-view-smart-plans-v2 .card-icons { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.crm-view-smart-plans-v2 .icon-badge { width: 30px; height: 30px; background: var(--green-light, #dcfce7); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--green, #16a34a); flex-shrink: 0; }
+.crm-view-smart-plans-v2 .icon-badge svg { width: 15px; height: 15px; }
+.crm-view-smart-plans-v2 .icon-badge.cal { background: #d1fae5; color: #059669; }
+.crm-view-smart-plans-v2 .icon-badge.task { background: #fef9c3; color: #ca8a04; }
+.crm-view-smart-plans-v2 .card-duration { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gray-400); margin-top: auto; }
+.crm-view-smart-plans-v2 .card-footer { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.crm-view-smart-plans-v2 .use-btn { flex: 1; padding: 7px 0; border: 1.5px solid var(--blue); border-radius: 7px; background: var(--white); color: var(--blue); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; text-align: center; }
+.crm-view-smart-plans-v2 .use-btn:hover { background: var(--blue-light); }
+.crm-view-smart-plans-v2 .eye-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--gray-400); cursor: pointer; border-radius: 6px; transition: color .12s, background .12s; flex-shrink: 0; }
+.crm-view-smart-plans-v2 .eye-btn:hover { color: var(--gray-600); background: var(--gray-100); }

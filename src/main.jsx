@@ -16,55 +16,99 @@ import { askGeminiTutor, isGeminiConfigured } from "./geminiClient";
 
 const SMART_PLAN_LESSON = {
   id: "smart-plan",
-  title: "Creating a Smart Plan",
+  title: "Smart Plans Walkthrough",
   subtitle: "Automated lead nurturing",
   icon: "🎯",
   steps: [
     {
       narration:
-        "Welcome! I'll show you how to create a Smart Plan in Lofty. Smart Plans are one of the most powerful features for automating your lead follow-up.",
+        "Welcome! I'll show you how Smart Plans work in Lofty. Smart Plans are powerful automated sequences that combine emails, texts, and tasks to nurture leads continuously — no manual follow-up needed.",
       target: null,
     },
     {
       narration:
-        "First, let's navigate to the Automation section where Smart Plans live.",
+        "First, let's head over to the Automation section.",
       target: "nav-automation",
       action: "click",
+    },
+    {
+      narration:
+        "This is the Smart Plans dashboard. The header shows two key tabs: Plans — your active plans — and Library, a collection of pre-built templates you can import.",
+      target: "smart-plans-header",
+      action: "highlight",
       effect: { navigate: "smartPlans" },
     },
     {
       narration:
-        "Here's the Smart Plans dashboard. You can see existing plans and their performance metrics. Each plan automates a sequence of emails and tasks for continuous lead nurturing.",
-      target: "smart-plans-header",
+        "In the Plans tab you can see all your plans at a glance — Plan Name, Scope, Lead Type, Duration, Application trigger, Auto Apply, and Actions.",
+      target: "sp-toolbar",
       action: "highlight",
     },
     {
       narration:
-        "The New Buyer Welcome plan has enrolled 45 leads and is automatically sending follow-up sequences. You can monitor performance from here.",
-      target: "plan-row-0",
+        "Now let's look at a specific plan. The 'New Buyer Welcome Sequence' runs for 14 days — sending scheduled emails and creating follow-up tasks during that window.",
+      target: "plan-duration-1",
       action: "highlight",
     },
     {
-      narration: "Now let's create a new plan. Click the Create New Plan button.",
+      narration:
+        "The Auto Apply toggle lets a plan automatically enroll leads when they match the configured trigger — like when a new lead registers or a tag is added. No manual assignment needed.",
+      target: "sp-col-auto-apply",
+      action: "highlight",
+    },
+    {
+      narration:
+        "You can also filter plans by Auto Apply status or by Scope — for example, showing only your personal plans versus company-wide plans shared across the team.",
+      target: "sp-auto-apply-filter",
+      action: "highlight",
+    },
+    {
+      narration:
+        "Now let me show you the Library tab — it has pre-built templates you can import instantly.",
+      target: "sp-tab-library",
+      action: "click",
+    },
+    {
+      narration:
+        "Here in the Library you can find professional templates like 'Buyer-No Response AI', 'Realty.com Seller Engagement', and 'Buyer Lead Cold Workflow'. Each card shows the communication channels used — phone, email, SMS — and the total plan duration.",
+      target: null,
+      effect: { setSpTab: "Library" },
+    },
+    {
+      narration:
+        "Now let's go back to Plans and create a new one.",
+      target: "sp-tab-plans",
+      action: "click",
+    },
+    {
+      narration:
+        "Click the Create Smart Plan button to start building your own automated sequence.",
       target: "create-plan-btn",
       action: "click",
+      effect: { setSpTab: "Plans" },
+    },
+    {
+      narration:
+        "Here's the plan creation form. Let's walk through it step by step.",
+      target: "plan-name-input",
+      action: "highlight",
       effect: { showCreator: true },
     },
     {
       narration:
-        "Start by naming your plan. A descriptive name helps you identify it later — for example, 'New Buyer Welcome Sequence'.",
+        "Start by giving your plan a descriptive name. A clear name like 'New Buyer Welcome Sequence' helps you identify it quickly across all your plans.",
       target: "plan-name-input",
       action: "highlight",
     },
     {
       narration:
-        "Next, select your trigger. This determines when leads automatically enter the plan — like when a new lead registers or gets a specific tag.",
+        "Next, choose a trigger. This determines exactly when a lead enters the plan automatically — you can trigger on new lead registration, a tag being added, or even a manual assignment.",
       target: "plan-trigger",
       action: "highlight",
     },
     {
       narration:
-        "Finally, save your plan. Once activated, it will automatically nurture every lead matching your trigger. That's the power of Smart Plans!",
+        "Once you're happy with the setup, click Save Plan. Lofty will immediately start enrolling matching leads and executing the sequence. That's the full power of Smart Plans — set it up once and let it run!",
       target: "plan-save-btn",
       action: "highlight",
     },
@@ -72,14 +116,74 @@ const SMART_PLAN_LESSON = {
   interrupts: {
     "what is smart plan": {
       answer:
-        "Great question! A Lofty Smart Plan is a robust lead-nurturing feature that combines email drip campaigns with tasks to help you communicate with your leads continuously. Think of it as your automated follow-up assistant — it sends scheduled emails and creates tasks for you, so no lead falls through the cracks. You can customize the timing, content, and triggers to match your specific business workflow.",
+        "A Lofty Smart Plan is an automated lead-nurturing sequence that combines email drip campaigns, texts, and tasks. Once set up, it runs automatically based on a trigger — like a new lead registering or a tag being added. Plans have a defined duration and can be set to Auto Apply so leads are enrolled without any manual work. You can also use the Library to import professionally designed templates.",
       resumePrompt:
-        "Now that you understand what Smart Plans are, would you like me to continue showing you how to create one?",
+        "Now that you understand Smart Plans, shall I continue the walkthrough?",
     },
-    "smart plan": {
+    "auto apply": {
       answer:
-        "A Smart Plan is Lofty's automated lead nurturing system. It combines email drip campaigns with scheduled tasks to keep you in touch with leads automatically. You set the trigger conditions and the plan handles the rest!",
-      resumePrompt: "Shall I continue with the tutorial?",
+        "Auto Apply means Lofty will automatically enroll leads into the Smart Plan whenever they match the trigger you set — for example, when a new lead registers or when a specific tag is added to their profile. You don't need to manually assign the plan to each lead.",
+      resumePrompt: "Want me to continue from where we left off?",
+    },
+    "library": {
+      answer:
+        "The Smart Plan Library is a collection of pre-built, professionally designed plan templates. You can filter by Plan Type, Lead Type, and Scenario. Each template card shows which communication channels it uses (email, text, call, AI) and the plan duration. Click 'Use Template' to import any template directly into your account.",
+      resumePrompt: "Shall I continue the lesson?",
+    },
+  },
+};
+
+const DASHBOARD_LESSON = {
+  id: "dashboard-overview",
+  title: "Dashboard Quick Tour",
+  subtitle: "Your CRM home base",
+  icon: "🏠",
+  steps: [
+    {
+      narration:
+        "Welcome! Let me give you a quick tour of your Lofty CRM dashboard — this is your command center. Everything you need is just a click away.",
+      target: null,
+    },
+    {
+      narration:
+        "The top navigation bar gives you instant access to all major sections: CRM, Sales, Marketing, Content, Automation, Reporting, Marketplace, and AI Copilots.",
+      target: "nav-links",
+      action: "highlight",
+    },
+    {
+      narration:
+        "The New Updates card shows the latest announcements and feature releases from Lofty. This is how you stay current with new tools as they roll out.",
+      target: "updates-card",
+      action: "highlight",
+    },
+    {
+      narration:
+        "Today's New Leads shows every lead that registered today but hasn't been contacted yet. The colored score badge is their AI-calculated lead score — higher means hotter. These are your highest-priority calls for the day.",
+      target: "today-new-leads-card",
+      action: "highlight",
+    },
+    {
+      narration:
+        "The Today's Opportunities card surfaces high-intent signals — buyers actively searching, likely sellers, and leads returning to your site. Think of this as your AI-curated shortlist of the most promising actions right now.",
+      target: "opportunities-card",
+      action: "highlight",
+    },
+    {
+      narration:
+        "And that's the dashboard! In just a few seconds you can see who needs attention, what's new, and where your biggest opportunities are. Start here every morning to prioritize your day.",
+      target: null,
+    },
+  ],
+  interrupts: {
+    "lead score": {
+      answer:
+        "The Lead Score is an AI-powered rating from 0 to 100 based on how engaged a lead is — website visits, listing views, email opens, and more. A score of 80+ means this lead is very active and likely close to making a decision. Prioritize high-score leads for immediate outreach.",
+      resumePrompt: "Want me to continue the dashboard tour?",
+    },
+    "opportunities": {
+      answer:
+        "The Today's Opportunities card uses AI to surface leads showing high-intent signals right now — things like returning to your website, saving multiple listings, or showing patterns similar to past buyers. It's your AI assistant telling you 'these leads are worth a call today'.",
+      resumePrompt: "Shall I continue?",
     },
   },
 };
@@ -264,6 +368,7 @@ const HELP_CENTER_LESSON = {
 };
 
 const DUMMY_LESSONS = [
+  { id: "dashboard-overview", title: "Dashboard Quick Tour", subtitle: "Your CRM home base", icon: "🏠" },
   { id: "followup", title: "Follow-Up Strategies", subtitle: "Best practices", icon: "📬", dummy: true },
   { id: "copilots", title: "AI Copilots Overview", subtitle: "Getting started with AI", icon: "🤖", dummy: true },
 ];
@@ -288,6 +393,7 @@ const ALL_LESSONS_MAP = {
   "lead-score": LEAD_SCORE_LESSON,
   "release-4-40": RELEASE_440_LESSON,
   "help-dashboard": HELP_CENTER_LESSON,
+  "dashboard-overview": DASHBOARD_LESSON,
 };
 
 /* ═══════════════════════════════════════
@@ -295,10 +401,11 @@ const ALL_LESSONS_MAP = {
    ═══════════════════════════════════════ */
 
 const SMART_PLANS_DATA = [
-  { name: "New Buyer Welcome", status: "Active", enrolled: 45, emails: 8, tasks: 3, color: "var(--green)" },
-  { name: "Buyer Follow-Up", status: "Active", enrolled: 28, emails: 5, tasks: 2, color: "var(--green)" },
-  { name: "Listing Alert Nurture", status: "Paused", enrolled: 12, emails: 4, tasks: 1, color: "var(--amber)" },
-  { name: "Open House Follow-Up", status: "Draft", enrolled: 0, emails: 3, tasks: 2, color: "var(--gray-400)" },
+  { name: "Lofty Bloom Companion Smart Plan", scope: "My Plan", leadType: "Buyer, Seller", duration: "28 days", application: "When: Le… Lofty Blo…", autoApply: false },
+  { name: "New Buyer Welcome Sequence", scope: "My Plan", leadType: "Buyer", duration: "14 days", application: "When: New lead registers", autoApply: true },
+  { name: "Seller Listing Nurture", scope: "Company", leadType: "Seller", duration: "30 days", application: "When: Tag added", autoApply: true },
+  { name: "Open House Follow-Up", scope: "My Plan", leadType: "Buyer", duration: "7 days", application: "When: Manual assignment", autoApply: false },
+  { name: "Expired Listing Outreach", scope: "Company", leadType: "Seller", duration: "21 days", application: "When: Le… Expired L…", autoApply: false },
 ];
 
 const PEOPLE_DATA = [
@@ -334,6 +441,7 @@ function App() {
   const [crmView, setCrmView] = useState("dashboard"); // dashboard | smartPlans | people | releaseDetail
   const [showLeadDrawer, setShowLeadDrawer] = useState(false);
   const [showPlanCreator, setShowPlanCreator] = useState(false);
+  const [spTab, setSpTab] = useState("Plans");
 
   // Lesson engine
   const [activeLesson, setActiveLesson] = useState(null);
@@ -419,7 +527,7 @@ function App() {
       clearTimeout(t);
       window.removeEventListener("resize", update);
     };
-  }, [cursorTarget, crmView, showPlanCreator, showLeadDrawer]);
+  }, [cursorTarget, crmView, showPlanCreator, showLeadDrawer, spTab]);
 
   /* ── fetch backend counts ───── */
   useEffect(() => {
@@ -538,6 +646,10 @@ function App() {
       setShowLeadDrawer(true);
       await wait(350);
     }
+    if (step.effect?.setSpTab) {
+      setSpTab(step.effect.setSpTab);
+      await wait(350);
+    }
 
     // Move cursor
     if (step.target) {
@@ -565,6 +677,7 @@ function App() {
     setCrmView("dashboard");
     setShowLeadDrawer(false);
     setShowPlanCreator(false);
+    setSpTab("Plans");
     setCursorTarget(null);
 
     setActiveLesson(lesson);
@@ -617,6 +730,7 @@ function App() {
     setCrmView("dashboard");
     setShowLeadDrawer(false);
     setShowPlanCreator(false);
+    setSpTab("Plans");
   }
 
   async function handleInterrupt(interruptData) {
@@ -1037,15 +1151,40 @@ function App() {
 
   function renderSmartPlans() {
     return (
-      <div id="crm-content" className="crm-view-smart-plans">
-        <div className="view-page-header">
-          <div>
-            <div className="view-page-title" data-target="smart-plans-header">Smart Plans</div>
-            <div className="view-page-subtitle">Automated lead nurturing sequences</div>
+      <div id="crm-content" className="crm-view-smart-plans-v2">
+        {/* ── SUB NAV ── */}
+        <div className="subnav" data-target="smart-plans-header">
+          <span className="subnav-title">Smart Plans</span>
+          <button className="subnav-btn" data-target="sp-get-training">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Get Training
+          </button>
+          <button className="subnav-btn" data-target="sp-whats-new">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            What&apos;s New?
+          </button>
+
+          <div className="tab-group">
+            <div className={`tab ${spTab === "Plans" ? "active" : ""}`} data-target="sp-tab-plans" onClick={() => setSpTab("Plans")}>Plans</div>
+            <div className={`tab ${spTab === "Library" ? "active" : ""}`} data-target="sp-tab-library" onClick={() => setSpTab("Library")}>Library</div>
           </div>
-          <button className="view-page-action-btn" data-target="create-plan-btn">+ Create New Plan</button>
+
+          {spTab === "Plans" ? (
+            <button className="create-btn" data-target="create-plan-btn" onClick={() => setShowPlanCreator(!showPlanCreator)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create Smart Plan
+              <div className="chevron"></div>
+              <span className="arrow">▾</span>
+            </button>
+          ) : (
+            <button className="create-btn" onClick={() => setShowPlanCreator(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create From Scratch
+            </button>
+          )}
         </div>
 
+        {/* Plan creator overlay */}
         {showPlanCreator && (
           <div className="plan-creator-card" data-target="plan-creator">
             <div className="plan-creator-title">Create New Smart Plan</div>
@@ -1076,29 +1215,360 @@ function App() {
           </div>
         )}
 
-        <div className="smart-plans-table">
-          <div className="spt-header-row">
-            <div className="spt-col name">Plan Name</div>
-            <div className="spt-col status">Status</div>
-            <div className="spt-col num">Enrolled</div>
-            <div className="spt-col num">Emails</div>
-            <div className="spt-col num">Tasks</div>
-          </div>
-          {SMART_PLANS_DATA.map((plan, i) => (
-            <div className="spt-row" key={plan.name} data-target={`plan-row-${i}`}>
-              <div className="spt-col name">
-                <div className="spt-plan-icon">📋</div>
-                {plan.name}
-              </div>
-              <div className="spt-col status">
-                <span className="spt-status-badge" style={{ color: plan.color, background: plan.color + "18" }}>{plan.status}</span>
-              </div>
-              <div className="spt-col num">{plan.enrolled}</div>
-              <div className="spt-col num">{plan.emails}</div>
-              <div className="spt-col num">{plan.tasks}</div>
+        {/* ── PLANS VIEW ── */}
+        {spTab === "Plans" && (
+          <div className="layout">
+          {/* ── LEFT SIDEBAR ── */}
+          <aside className="sidebar" data-target="sp-sidebar">
+            <div className="sidebar-search">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search by name" />
             </div>
-          ))}
+
+            <div className="sidebar-item active" data-target="sp-all-plans">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              All Smart Plans
+            </div>
+
+            <div className="sidebar-section">
+              My Folder
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
+            </div>
+            <div className="sidebar-empty">No folders</div>
+
+            <div className="sidebar-section">
+              Company Folder
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
+            </div>
+            <div className="sidebar-empty">No folders</div>
+
+            <div className="sidebar-footer">
+              <button className="add-folder-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Folder
+              </button>
+            </div>
+          </aside>
+
+          {/* Sidebar collapse handle */}
+          <div className="collapse-handle" onClick={(e) => {
+            const handle = e.currentTarget;
+            const sidebar = handle.previousSibling;
+            if (sidebar.style.transform === 'translateX(-100%)') {
+              sidebar.style.transform = '';
+              sidebar.style.width = 'var(--sidebar-w)';
+              sidebar.style.padding = '12px 10px';
+              handle.style.left = 'calc(var(--sidebar-w) - 12px)';
+              handle.textContent = '‹';
+            } else {
+              sidebar.style.transform = 'translateX(-100%)';
+              sidebar.style.width = '0';
+              sidebar.style.padding = '0';
+              handle.style.left = '-4px';
+              handle.textContent = '›';
+            }
+          }}>‹</div>
+
+          {/* ── MAIN CONTENT ── */}
+          <main className="main">
+            {/* ── TOOLBAR ── */}
+            <div className="toolbar" data-target="sp-toolbar">
+              <div className="toolbar-search">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" placeholder="Search by plan name" />
+              </div>
+              <div className="filter-btn" data-target="sp-auto-apply-filter">
+                Auto Apply: All <span className="caret">▾</span>
+              </div>
+              <div className="filter-btn" data-target="sp-scope-filter">
+                Scope: My Plans <span className="caret">▾</span>
+              </div>
+              <div className="toolbar-right">
+                <div className="view-btn active" title="Grid view">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                </div>
+                <div className="view-btn" title="List view">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="18"/></svg>
+                </div>
+              </div>
+            </div>
+
+            {/* ── TABLE ── */}
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th><div className="cb"></div></th>
+                    <th data-target="sp-col-name">Plan Name <span className="sort-icon">⇅</span></th>
+                    <th data-target="sp-col-scope">Scope</th>
+                    <th data-target="sp-col-lead-type">Lead Type</th>
+                    <th data-target="sp-col-duration">Duration</th>
+                    <th data-target="sp-col-application">Application</th>
+                    <th data-target="sp-col-auto-apply">Auto Apply</th>
+                    <th data-target="sp-col-action">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SMART_PLANS_DATA.map((plan, i) => (
+                    <tr key={plan.name} data-target={`plan-row-${i}`}>
+                      <td><div className="cb"></div></td>
+                      <td><span className="plan-name">{plan.name}</span></td>
+                      <td>{plan.scope}</td>
+                      <td style={{fontSize: 12}}>Include one of: {plan.leadType}</td>
+                      <td data-target={`plan-duration-${i}`}>{plan.duration}</td>
+                      <td style={{color: "var(--gray-500)", fontSize: 12}}>{plan.application}</td>
+                      <td><div className={`toggle${plan.autoApply ? " on" : ""}`} onClick={(e) => e.currentTarget.classList.toggle('on')}></div></td>
+                      <td>
+                        <div className="action-icons">
+                          <div className="action-icon" title="Preview">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          </div>
+                          <div className="action-icon" title="Settings">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ── PAGINATION ── */}
+            <div className="pagination" data-target="sp-pagination">
+              <input className="page-input" type="text" defaultValue="1" readOnly />
+              <div className="page-count">1</div>
+              <div className="page-size">50 <span className="caret">▾</span></div>
+            </div>
+          </main>
+
+          {/* ── RIGHT RAIL ── */}
+          <div className="right-rail">
+            <div className="rail-icon" title="Expand">✛</div>
+            <div className="rail-icon" title="Call">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div className="rail-icon" title="Inbox">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 9 12 15 21 9"/><path d="M3 9h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/></svg>
+            </div>
+            <div className="rail-icon" title="Notifications">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <div className="rail-icon" title="Help">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div className="rail-icon" title="Settings">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+          </div>
         </div>
+        )}
+
+        {/* ── LIBRARY VIEW ── */}
+        {spTab === "Library" && (
+          <div className="page-body">
+            {/* TOOLBAR */}
+            <div className="toolbar">
+              <div className="toolbar-search">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" placeholder="Search by plan name" />
+              </div>
+              <div className="filter-btn">Plan Type: All <span className="caret">▾</span></div>
+              <div className="filter-btn">Lead Type: All <span className="caret">▾</span></div>
+              <div className="filter-btn">Scenario: All <span className="caret">▾</span></div>
+              <div className="toolbar-right">
+                <div className="view-btn" title="List view">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                </div>
+                <div className="view-btn active" title="Grid view">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </div>
+              </div>
+            </div>
+
+            {/* CARDS GRID */}
+            <div className="cards-grid">
+              {/* Card 1 */}
+              <div className="card">
+                <div className="card-title">Buyer-No Response (AI)</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Include one of: Buyer
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  75 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 2 */}
+              <div className="card">
+                <div className="card-title">Realty.com Seller Engagement Campaign (...</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Equals To: Seller
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  379 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div className="card">
+                <div className="card-title">Realty.com Seller Engagement Campaign (...</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Equals To: Seller
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  379 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 4 */}
+              <div className="card">
+                <div className="card-title">Realty.com Buyer Engagement Campaign (...</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Equals To: Buyer
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  379 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 5 */}
+              <div className="card">
+                <div className="card-title">Realty.com Buyer Engagement Campaign (...</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Equals To: Buyer
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  379 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 6 */}
+              <div className="card">
+                <div className="card-title">Buyer-Just Looking (AI)</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Include one of: Buyer
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  238 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 7 */}
+              <div className="card">
+                <div className="card-title">Buyer Lead – Cold Workflow</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Include one of: Buyer, Renter, Other; Include all:…
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+                  <div className="icon-badge task"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  361 days duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+
+              {/* Card 8 */}
+              <div className="card">
+                <div className="card-title">Lofty AI – Buyer Requested Showing</div>
+                <div className="card-lead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Include one of: Buyer, Seller, Renter, Other; Incl…
+                </div>
+                <div className="card-icons">
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.98-.98a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+                  <div className="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 11V7"/><circle cx="12" cy="5" r="2"/><path d="M8 15h.01M16 15h.01"/></svg></div>
+                </div>
+                <div className="card-duration">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  0 day duration
+                </div>
+                <div className="card-footer">
+                  <button className="use-btn">Use Template</button>
+                  <div className="eye-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
