@@ -27,28 +27,29 @@ Core pitch:
 > release note or Help Center tutorial can become an interactive in-product lesson, so
 > both new and experienced agents understand Lofty features at the moment they need them.
 
-## What We Are Building
+## What We Have Built
 
-We are building a demo web app, not automating the real Lofty production account.
+The demo is a fully functional web app (React + Vite), not automating the real Lofty account.
 
-The demo has four product pillars:
+The demo has four product pillars, all implemented:
 
-1. **Lofty-style CRM sandbox**
-   A controlled, realistic CRM environment with dashboard, Today's Opportunities, lead
-   scores, and supporting CRM details.
+1. **Lofty-style CRM sandbox** ✅
+   Four CRM views: Dashboard, Smart Plans (table + create form), People (lead list +
+   Emily Wilson detail drawer with score breakdown), and Release Detail (Lofty 4.40
+   feature cards).
 
-2. **Live AI guidance layer**
-   The user-facing magic now lives inside **Academy Mode**: a top-right navbar toggle,
-   animated top bar, left course/progress panel, zoomed full-dashboard CRM simulator,
-   right AI chat history, tutor actions, Q&A interrupt, and voice output.
+2. **Live AI guidance layer** ✅
+   Academy Mode with animated overlay: left panel (4 sections: Lessons, Release Notes,
+   Help Center, Achievements), center CRM simulator with AI cursor + highlight ring,
+   right AI Tutor Chat with full transcript, ask anything input, and continuous mic.
 
 3. **Content-to-lesson engine**
    Release notes and Help Center tutorials are both source content. The system extracts
    key steps and turns them into guided in-product lessons.
 
-4. **Insforge backend**
-   The real backend for auth, persistence, release/tutorial storage, lesson state, Q&A
-   logging, and publish flow.
+4. **Insforge backend** ✅
+   Backend for persistence: lesson storage, progress tracking, Q&A event logging,
+   and ElevenLabs voice synthesis via Edge Functions.
 
 ## Why We Are Not Using Real Lofty For The Demo
 
@@ -128,38 +129,53 @@ interactive onboarding.
 
 ## Demo Pages
 
-### Dashboard
+### Dashboard ✅
 
-Needs:
+Implemented:
 
-- Top navigation matching the screenshot: Lofty logo, CRM, Sales, Marketing, Content,
-  Automation, Reporting, Marketplace, AI Copilots, search, avatar
-- Right utility rail
-- "Good Evening, Shrey!" greeting and Today's Priorities control
-- Top-right navbar toggle: **Academy mode**
-- Need Keep In Touch widget
-- Today's Opportunities widget
-- Today's New Leads with Emily Wilson, score 59
-- Active Transactions or Upcoming Showings as supporting CRM realism
+- Top navigation: Lofty logo, CRM, Sales, Marketing, Content, Automation, Reporting,
+  Marketplace, AI Copilots, search, avatar
+- Right utility rail with icon strip
+- "Good Afternoon, Baylee!" greeting and Today's Priorities control
+- Top-right navbar toggle: **Academy mode** (toggles on/off with animation)
+- New Updates / Announcements card
+- Today's New Leads with Emily Wilson (score 59), Carlos Garcia (44), Samuel Scott (43)
+- Today's Opportunities with High Interest / Likely Sellers / Back to Site
+- Need Keep In Touch, Transactions, and Today's Tasks cards
 
-### Academy Mode
+### Academy Mode ✅ — Fully Functional
 
-Needs:
+Left panel (4 sections):
+- **Lessons** — 2 LIVE (Smart Plan, Lead Score) + 2 COMING SOON (Follow-Up, AI Copilots)
+- **Release Notes** — 1 LIVE (Lofty 4.40) + 3 COMING SOON (4.39.5, 4.39, 4.38)
+- **Help Center** — 6 modules with expandable articles, 1 LIVE (Dashboard Overview)
+- **Achievements** — placeholder
+- Progress ring showing 75% completion
+- Help Center Tutorials feature card
 
-- Left panel with course lessons and completion state
-- Middle panel with the zoomed full-dashboard Lofty CRM simulator and red-box/cursor guidance
-- Right panel with AI chat history, Q&A input, Voice button, lesson actions, and backend proof
-- Release lesson included in the course list, not treated as a separate product
-- Help Center extraction available as supporting proof, but not the main story
+Center CRM simulator:
+- AI cursor with smooth transition animation and blue pointer SVG
+- Highlight ring with pulsing glow around target elements
+- Click pulse animation when cursor "clicks"
+- CRM navigates between Dashboard, Smart Plans, People, and Release Detail views
+- Lead detail drawer slides in for Emily Wilson with score breakdown
+- Smart Plan creator form appears during lesson
 
-Current implementation note:
+Right panel (AI Tutor Chat):
+- Full scrolling transcript of all AI narrations and user messages
+- Chat bubbles with AI Tutor / You labels
+- "Ask anything..." textarea input with send button
+- Single mic button at bottom (continuous — stays on until explicitly stopped)
+- Speaking indicator pill when ElevenLabs audio is playing
+- Empty state with welcome message
 
-- The panel UI is intentionally replaceable for redesign, but the behavior is already wired.
-- Left panel lesson clicks move the live cursor and record progress through Insforge.
-- Right panel uses the live tutor: transcript, Ask flow, Resume lesson, Voice, release/help actions,
-  and backend proof counts.
-- The center CRM is a fixed full-dashboard stage that zooms down to fit the middle viewport,
-  so the dashboard does not reflow into a narrow layout.
+Interrupt system:
+- User types or speaks a trigger phrase (e.g. "what is smart plan")
+- Lesson pauses immediately, audio stops, cursor clears
+- AI dictates (voice + text) a detailed explanation of the concept
+- AI asks "shall I continue?" with voice dictation
+- User says "yes" / "continue" → lesson resumes from next step
+- Q&A event logged to Insforge backend
 
 ### Content-to-Lesson Generator
 
@@ -227,13 +243,13 @@ rollout, triggered lessons for users who have not adopted AI features.
 
 ## Build Priorities
 
-1. Make the Lofty-style CRM sandbox look credible.
-2. Build the live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt.
-3. Wire Insforge demo profiles/Postgres persistence and log lesson/Q&A state.
-4. Make Academy Mode the main judged flow: animated overlay, course list, zoomed simulator, AI chat, voice, and Q&A.
-5. Keep release-note and Help Center lessons inside Academy Mode.
-6. Deploy the live app.
-7. Polish and record the demo.
+1. ✅ Make the Lofty-style CRM sandbox look credible.
+2. ✅ Build the live AI guidance layer: cursor, highlights, and Q&A interrupt.
+3. ✅ Wire Insforge persistence and log lesson/Q&A state.
+4. ✅ Build Academy Mode: animated overlay, 4 lesson categories, CRM views, AI chat, voice.
+5. ✅ Add release-note and Help Center lessons inside Academy Mode.
+6. **Deploy the live app.** ← NEXT
+7. **Polish and record the demo.** ← NEXT
 
 ## Things To Avoid
 

@@ -61,12 +61,14 @@ or static checklist. It is contextual product education that teaches inside the 
 
 ### Must Ship
 
-- A high-fidelity Lofty-style mock CRM
-- Animated Academy Mode overlay with left course panel, center CRM simulator, and right AI panel
-- One polished onboarding lesson
-- One interruptible Q&A moment
-- One Help Center article converted into a numbered red-box / arrow walkthrough
-- Text transcript plus ElevenLabs voice output
+- ✅ A high-fidelity Lofty-style mock CRM (Dashboard, Smart Plans, People, Release Detail)
+- ✅ Animated Academy Mode overlay with left course panel, center CRM simulator, and right AI panel
+- ✅ Two polished onboarding lessons (Smart Plan + Lead Score) — both fully functional
+- ✅ Interruptible Q&A moment with voice dictation of interrupt answers
+- ✅ One release note lesson (Lofty 4.40) with cursor-guided walkthrough
+- ✅ One Help Center tutorial (Dashboard Overview) with interactive simulation
+- ✅ Text transcript plus ElevenLabs voice output
+- ✅ Voice input via continuous Web Speech API microphone
 - A content-to-lesson generator screen
 - Insforge as the primary deployed backend
 - A live deployed app, not only localhost
@@ -74,15 +76,15 @@ or static checklist. It is contextual product education that teaches inside the 
 
 ### Nice To Have
 
-- A second lesson for People / lead score
-- Smart Plans or Today's Opportunities as a preview card
-- Voice input via browser speech recognition
+- ✅ A second lesson for People / lead score — DONE
+- ✅ Smart Plans page as a full CRM view — DONE
+- ✅ Voice input via browser speech recognition — DONE (continuous mic)
 - Always-on assistant button as a future-state teaser
 
 ### Cut If Time Gets Tight
 
-1. Voice input
-2. Lessons beyond the first polished flow
+1. ~~Voice input~~ — DONE
+2. ~~Lessons beyond the first polished flow~~ — DONE (4 lessons)
 3. Screenshot streaming, if direct embedded mock UI is more reliable
 4. Always-on assistant mode
 5. Full Stagehand automation, if a deterministic scripted demo is needed
@@ -327,39 +329,24 @@ Generated lesson output:
 }
 ```
 
-## Repository Structure
+## Repository Structure (Actual)
 
 ```txt
-lofty-academy/
-  README.md
+Agent Reborn/
+  index.html
   plan.md
   teammate-brief.md
+  package.json
+  .env.local                         # VITE_INSFORGE_BASE_URL & VITE_INSFORGE_ANON_KEY
+  src/
+    main.jsx                         # All UI: CRM views, Academy Mode, Lesson Engine, Voice, Cursor
+    styles.css                       # Full styling for all views and overlays
+    insforgeBackend.js               # Insforge SDK helpers: lessons, progress, Q&A, TTS
   insforge/
-    schema.sql
+    schema.sql                       # profiles, content_sources, lessons, lesson_progress, qa_events
     functions/
-      generateLessonFromReleaseNote.js
-      validateLessonAgainstSandbox.js
-      recordQuestionEvent.js
-  backend/
-    optional-local-dev-server.js
-    ai/
-      qa-handler.js
-      tts-client.js
-  frontend/
-    src/
-      App.jsx
-      components/
-        CRMFrame.jsx
-        TutorPanel.jsx
-        LessonProgress.jsx
-        TranscriptFeed.jsx
-        ReleaseLessonGenerator.jsx
-        AdminBackendStatus.jsx
-        VoiceControls.jsx
-      data/
-        mockCrmData.js
-  mock-crm/
-    optional-static-pages/
+      generate-lesson.ts             # Edge Function: content → lesson JSON
+      speak-lesson.ts                # Edge Function: text → ElevenLabs MP3
 ```
 
 ## Build Plan
@@ -488,46 +475,46 @@ Current status:
 
 This is required for the Insforge track and makes the demo feel like a real SaaS feature.
 
-### Phase 4 - Academy Mode Golden Path
+### Phase 4 - Academy Mode Golden Path ✅ COMPLETE
 
-Lesson 1: "Your AI-Powered Dashboard"
+Four interactive lessons are fully implemented:
 
-Steps:
+**Lesson 1: Creating a Smart Plan** 🎯
+- AI cursor navigates from Dashboard → Automation → Smart Plans page
+- Shows existing plans table, then creates a new plan (form wizard)
+- Interrupt: "what is smart plan" → AI pauses, explains Smart Plans, asks to resume
+- Voice narration via ElevenLabs throughout
 
-1. Open the dashboard.
-2. Toggle **Academy mode** in the top-right navbar.
-3. Show the staged animation:
-   top bar slides down first, left/right panels slide in next, panel content fades in.
-4. The existing CRM stays mounted in the center as a zoomed full-dashboard simulator,
-   not a reflowed or replaced view.
-5. Explain "Need Keep In Touch."
-6. Highlight "Today's Opportunities."
-7. Move the AI cursor to High Interest / Likely Sellers / Back to Site.
-8. Explain why these are AI-prioritized signals.
-9. Move toward lead score.
+**Lesson 2: Understanding Lead Scores** 📊
+- Highlights Today's New Leads → Emily Wilson score → navigates to People page
+- Opens Emily Wilson's lead detail drawer with full score breakdown
+- Shows Lead Analysis with property preferences and engagement trend
+- Interrupt: "what is lead score" → AI explains scoring system, asks to resume
 
-Interrupt:
+**Lesson 3: Lofty 4.40 Feature Updates** 🚀
+- Highlights updates card → navigates to Release Detail view
+- Shows 5 feature cards: Sales Agent, Smart Plan Performance, Transaction Portal, etc.
+- Interrupt: "what is sales agent" / "what is digital employee" → explains, resumes
 
-- User asks: "Wait, what is a lead score?"
-- AI pauses lesson.
-- AI cursor moves to Today's New Leads.
-- It highlights Emily Wilson's score chip.
-- It opens or reveals a lead-score explanation panel.
-- It explains the score and the activity behind it.
-- Returns to the dashboard lesson.
+**Lesson 4: Dashboard Overview (Help Center)** 📖
+- Guides through all dashboard sections: nav bar, updates, leads, opportunities
+- Accessible from Help Center > Getting Started > Dashboard Overview
 
-This is the demo's core proof.
+CRM Views implemented:
+- Dashboard (original Lofty-style)
+- Smart Plans (plan table + create form)
+- People (lead list with scores + Emily Wilson detail drawer)
+- Release Detail (5 feature cards for Lofty 4.40)
 
-Current status:
-
-- Implemented in the prototype: the navbar has an **Academy mode** toggle.
-- Academy Mode is an animated overlay shell: center topbar, left course/progress panel,
-  right live AI transcript panel, and a zoomed full-dashboard CRM simulator in the middle.
-- Left panel is wired to real lessons: selecting a lesson moves the cursor live and
-  records progress through Insforge.
-- Right panel is wired to real AI behavior: chat history, Q&A interruption, Resume lesson,
-  release/help actions, ElevenLabs voice, and backend proof counts.
-- Next polish: redesign the Academy Mode visuals and tighten the demo narration.
+AI features implemented:
+- Custom AI cursor with smooth animation and highlight ring
+- Click pulse animation when cursor "clicks" elements
+- Interrupt detection via keyword matching in chat or voice
+- Voice dictation of interrupt answers and resume prompts
+- Continuous mic via Web Speech API (stays on until user stops)
+- Full transcript of all narration and user messages
+- Lesson progress tracking with step indicators
+- Audio stops immediately when navigating Back during a lesson
 
 ### Phase 5 - Content-to-Lesson Generator
 
