@@ -79,6 +79,10 @@ const lessonSteps = [
   },
 ];
 
+const cursorLabelsByTarget = {
+  updates: "Release notes",
+};
+
 function App() {
   const demoMode =
     typeof window !== "undefined"
@@ -95,6 +99,7 @@ function App() {
     startWithHelpExtraction || startWithReleaseExplanation ? "updates" : null,
   );
   const [lessonIndex, setLessonIndex] = useState(0);
+  const [resumeLessonIndex, setResumeLessonIndex] = useState(null);
   const [question, setQuestion] = useState("");
   const [tutorOpen, setTutorOpen] = useState(
     startWithHelpExtraction || startWithReleaseExplanation,
@@ -153,6 +158,7 @@ function App() {
 
   const activeStep = lessonSteps[lessonIndex];
   const activeCursorLabel =
+    cursorLabelsByTarget[activeTarget] ||
     lessonSteps.find((step) => step.target === activeTarget)?.cursorLabel ||
     activeStep.cursorLabel;
   const currentUpdate = useMemo(() => releaseUpdates[2], []);
@@ -254,6 +260,7 @@ function App() {
     setTutorOpen(true);
     setActiveTarget(null);
     setLessonIndex(0);
+    setResumeLessonIndex(null);
     setLeadInsightOpen(false);
     setKnowledgeMode(false);
     setReleaseMode(false);
@@ -261,6 +268,22 @@ function App() {
   }
 
   function nextStep() {
+    if (resumeLessonIndex !== null && activeTarget === "score-chip") {
+      const resumeStep = lessonSteps[resumeLessonIndex];
+      setLessonIndex(resumeLessonIndex);
+      setResumeLessonIndex(null);
+      guideTo(resumeStep.target);
+      recordProgressFor(activeBackendLesson, resumeLessonIndex);
+      setMessages((items) => [
+        ...items,
+        {
+          speaker: "Academy",
+          text: `Back to where we were: ${resumeStep.narration}`,
+        },
+      ]);
+      return;
+    }
+
     if (!activeTarget) {
       const firstLesson =
         activeBackendLesson ||
@@ -329,6 +352,7 @@ function App() {
     const answerSummary =
       "Her 59 reflects a new Facebook lead with a valid contact path, renter intent, and no outreach yet. Lofty shows the evidence before asking the agent to act.";
     setQuestion("");
+    setResumeLessonIndex(lessonIndex);
     setLessonIndex(lessonSteps.findIndex((step) => step.target === "score-chip"));
     guideTo("score-chip", { showLeadInsight: true });
     setMessages((items) => [
@@ -422,6 +446,7 @@ function App() {
           backendStatus={backendStatus}
           currentUser={currentUser}
           hasActiveTarget={Boolean(activeTarget)}
+          hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
           setQuestion={setQuestion}
           onAskQuestion={askQuestion}
           onNextStep={nextStep}
@@ -735,6 +760,7 @@ function AcademyTutor({
   backendStatus,
   currentUser,
   hasActiveTarget,
+  hasResumeTarget,
   setQuestion,
   onAskQuestion,
   onNextStep,
@@ -830,7 +856,9 @@ function AcademyTutor({
       </form>
 
       <div className="academy-actions">
-        <button onClick={onNextStep}>{hasActiveTarget ? "Next step" : "Start lesson"}</button>
+        <button onClick={onNextStep}>
+          {hasResumeTarget ? "Resume lesson" : hasActiveTarget ? "Next step" : "Start lesson"}
+        </button>
         <button onClick={onExplainRelease}>Explain update</button>
         <button onClick={onExplainHelpTutorial}>Extract tutorial</button>
       </div>

@@ -99,7 +99,7 @@ The Insforge track has strict requirements:
 
 Our plan uses:
 
-- **Auth:** agent/admin login
+- **Demo auth / profiles:** agent/admin login backed by Insforge profiles
 - **Postgres:** release notes, lessons, lesson progress, Q&A events
 - **Storage:** uploaded release notes or generated lesson artifacts
 - **Backend logic:** generate lesson, validate lesson, record question, publish lesson
@@ -137,7 +137,7 @@ Needs:
 - Onboarding mode banner
 - Need Keep In Touch widget
 - Today's Opportunities widget
-- Top Lead Today: Marcus Webb, score 87
+- Today's New Leads with Emily Wilson, score 59
 - Active Transactions or Upcoming Showings as supporting CRM realism
 
 ### People / Lead Profile
@@ -145,9 +145,9 @@ Needs:
 Needs:
 
 - Lead list with scores
-- Marcus Webb row
+- Emily Wilson row
 - Lead profile drawer
-- Score 87 explanation
+- Score 59 explanation
 - Recent activity: viewed listings, returned to site, saved search
 - Current Smart Plan
 
@@ -218,7 +218,7 @@ rollout, triggered lessons for users who have not adopted AI features.
 
 1. Make the Lofty-style CRM sandbox look credible.
 2. Build the live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt.
-3. Wire Insforge Auth/Postgres persistence and log lesson/Q&A state.
+3. Wire Insforge demo profiles/Postgres persistence and log lesson/Q&A state.
 4. Build the content-to-lesson demo using Lofty 4.40 and the Aidentified Help Center article.
 5. Deploy the live app.
 6. Add ElevenLabs voice output if time allows.

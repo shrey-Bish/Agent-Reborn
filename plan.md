@@ -176,8 +176,8 @@ Requirements from the sponsor image:
 
 Use these four so the side-track story is clear:
 
-1. **Auth**
-   - Demo login as `shrey@lofty.demo`
+1. **Demo auth / profiles**
+   - Demo login as `shrey@lofty.demo`, backed by Insforge `profiles`
    - Role options: `agent` and `admin`
    - Agent sees the guided lesson
    - Admin sees the Content-to-Lesson Engine
@@ -209,7 +209,7 @@ Bonus if time allows:
 
 In the live app, show:
 
-1. Login works through Insforge Auth.
+1. Demo login loads agent/admin profiles from Insforge.
 2. Release note is saved to the database.
 3. Generated lesson is saved to the database.
 4. The lesson appears in the agent onboarding flow.
@@ -408,8 +408,8 @@ Then add only what the demo needs:
 
 Mock data should be realistic:
 
-- Sarah Mitchell as the agent
-- Marcus Webb as a high-score buyer lead
+- Shrey as the demo agent
+- Emily Wilson as the first lead-score explanation example
 - Maria Chen as a high-interest lead
 - James Park as a back-to-site lead
 - 1420 Oak St as a listing trigger
@@ -469,12 +469,19 @@ web app so the experience is reliable, safe, and clearly product-native.
 
 Implement the real backend path before polishing extras:
 
-1. Auth for agent/admin demo users.
+1. Demo profile login for agent/admin users.
 2. Postgres tables for release notes, lessons, progress, and Q&A events.
 3. Release note save/load.
-4. Generated lesson save/load.
+4. Generated lesson save/load through an Insforge Edge Function.
 5. Q&A event logging.
-6. Admin backend status panel showing persisted counts.
+6. Backend status panel showing persisted counts.
+
+Current status:
+
+- Done locally: demo login, Postgres schema, seeded release/tutorial lessons, progress
+  logging, Q&A logging, storage artifact count, and `generate-lesson` Edge Function.
+- Still needed before final submission: deploy the live app and polish the admin-facing
+  generated lesson/publish story.
 
 This is required for the Insforge track and makes the demo feel like a real SaaS feature.
 
@@ -502,6 +509,14 @@ Interrupt:
 - Returns to the dashboard lesson.
 
 This is the demo's core proof.
+
+Current status:
+
+- Started in the prototype: the lesson now begins on "Need Keep In Touch," moves through
+  AI opportunity signals, supports the lead-score Q&A interruption, and returns with a
+  "Resume lesson" action.
+- Next polish: make the golden path feel more cinematic with tighter narration, optional
+  ElevenLabs voice output, and a final persisted-event proof in the backend card.
 
 ### Phase 5 - Content-to-Lesson Generator
 
@@ -647,7 +662,7 @@ Why:
 
 Build requirement:
 
-- Use Auth + Postgres + Storage + Edge Functions/backend logic.
+- Use demo profile login + Postgres + Storage + Edge Functions/backend logic.
 - Deploy a live working app.
 - Show persisted backend state in the demo.
 
@@ -683,7 +698,7 @@ Build our own controlled web app instead.
 
 1. Lofty-style CRM sandbox
 2. Live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt
-3. Insforge Auth + Postgres persistence
+3. Insforge demo profiles + Postgres persistence
 4. Content-to-lesson demo saved through Insforge
 5. Golden path lesson
 6. Live deployment
