@@ -34,17 +34,26 @@ const lessonSteps = [
   {
     target: "updates",
     label: "New Updates",
+    cursorLabel: "Release notes",
     narration: "This card is where Lofty introduces new product capabilities. Lofty Academy can turn each release note into a guided in-product lesson.",
-  },
-  {
-    target: "new-leads",
-    label: "Today's New Leads",
-    narration: "This card helps new agents understand who entered the CRM today and which leads deserve attention first.",
   },
   {
     target: "opportunities",
     label: "Today's Opportunities",
+    cursorLabel: "AI signals",
     narration: "These are AI-prioritized signals. During onboarding, we explain what High Interest, Likely Sellers, and Back to Site mean before asking the agent to act.",
+  },
+  {
+    target: "opportunity-stats",
+    label: "Opportunity Signal Types",
+    cursorLabel: "Signal types",
+    narration: "High Interest, Likely Sellers, and Back to Site are not random dashboard numbers. They are the first AI concepts a new agent needs to understand and trust.",
+  },
+  {
+    target: "score-chip",
+    label: "Lead Score",
+    cursorLabel: "Lead score 59",
+    narration: "Lead score is Lofty's quick read on how ready a lead may be. The tutor can pause the lesson and show the evidence behind the number.",
   },
 ];
 
@@ -53,6 +62,8 @@ function App() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [question, setQuestion] = useState("");
   const [tutorOpen, setTutorOpen] = useState(false);
+  const [leadInsightOpen, setLeadInsightOpen] = useState(false);
+  const [cursorPulse, setCursorPulse] = useState(0);
   const [messages, setMessages] = useState([
     {
       speaker: "Academy",
@@ -62,23 +73,36 @@ function App() {
   const [releaseMode, setReleaseMode] = useState(false);
 
   const activeStep = lessonSteps[lessonIndex];
+  const activeCursorLabel =
+    lessonSteps.find((step) => step.target === activeTarget)?.cursorLabel ||
+    activeStep.cursorLabel;
   const currentUpdate = useMemo(() => releaseUpdates[2], []);
 
-  function nextStep() {
+  function guideTo(target, options = {}) {
     setTutorOpen(true);
+    setActiveTarget(target);
+    setLeadInsightOpen(target === "score-chip" || options.showLeadInsight === true);
+    setCursorPulse((value) => value + 1);
+  }
+
+  function openAcademy() {
+    guideTo(activeTarget || activeStep.target);
+  }
+
+  function nextStep() {
     const nextIndex = Math.min(lessonIndex + 1, lessonSteps.length - 1);
+    const nextStepData = lessonSteps[nextIndex];
     setLessonIndex(nextIndex);
-    setActiveTarget(lessonSteps[nextIndex].target);
+    guideTo(nextStepData.target);
     setMessages((items) => [
       ...items,
-      { speaker: "Academy", text: lessonSteps[nextIndex].narration },
+      { speaker: "Academy", text: nextStepData.narration },
     ]);
   }
 
   function explainRelease() {
-    setTutorOpen(true);
+    guideTo("updates");
     setReleaseMode(true);
-    setActiveTarget("updates");
     setMessages((items) => [
       ...items,
       {
@@ -93,24 +117,27 @@ function App() {
     const cleanQuestion = question.trim();
     if (!cleanQuestion) return;
     setQuestion("");
-    setTutorOpen(true);
-    setActiveTarget("new-leads");
+    setLessonIndex(lessonSteps.findIndex((step) => step.target === "score-chip"));
+    guideTo("score-chip", { showLeadInsight: true });
     setMessages((items) => [
       ...items,
       { speaker: "You", text: cleanQuestion },
       {
         speaker: "Academy",
-        text: "Great question. A lead score is Lofty's quick read on how ready a lead may be. In this card, Emily has a 59 because she is new, has a valid contact path, and came from Facebook. In production, I would open her profile and show the activity behind that score.",
+        text: "Great question. I paused the dashboard tour and moved to Emily's score. Her 59 reflects a new Facebook lead with a valid contact path, renter intent, and no outreach yet. The important trust point is that Lofty shows the evidence before asking the agent to act.",
       },
     ]);
   }
 
   return (
     <main className="lofty-shell">
-      <TopNav onOpenAcademy={() => setTutorOpen(true)} />
+      <TopNav onOpenAcademy={openAcademy} />
       <div className="workspace">
         <Dashboard
           activeTarget={tutorOpen ? activeTarget : null}
+          cursorLabel={activeCursorLabel}
+          cursorPulse={cursorPulse}
+          leadInsightOpen={leadInsightOpen}
           onExplainRelease={explainRelease}
         />
         <RightRail />
@@ -161,9 +188,20 @@ function TopNav({ onOpenAcademy }) {
   );
 }
 
-function Dashboard({ activeTarget, onExplainRelease }) {
+function Dashboard({
+  activeTarget,
+  cursorLabel,
+  cursorPulse,
+  leadInsightOpen,
+  onExplainRelease,
+}) {
   return (
     <section className="dashboard" aria-label="Lofty dashboard mock">
+      <GuidanceLayer
+        activeTarget={activeTarget}
+        cursorLabel={cursorLabel}
+        cursorPulse={cursorPulse}
+      />
       <div className="dashboard-head">
         <div className="greeting">
           <span className="wave" aria-hidden="true">👋</span>
@@ -207,7 +245,14 @@ function Dashboard({ activeTarget, onExplainRelease }) {
           <div className="thin-progress" />
           <h3 className="metric-title">Total: 8 (8 untouched)</h3>
           <p className="section-label">Leads Waiting To Be Contacted</p>
-          <LeadRow name="Emily Wilson" type="Renter" source="Facebook" score="59" />
+          <LeadRow
+            name="Emily Wilson"
+            type="Renter"
+            source="Facebook"
+            score="59"
+            active={activeTarget === "score-chip"}
+          />
+          {leadInsightOpen ? <LeadScoreInsight /> : null}
           <LeadRow name="Carlos Garcia" type="Other" source="Zillow" score="44" />
           <LeadRow name="Samuel Scott" type="Buyer" source="YouTube" score="43" />
           <button className="view-all">View All <span>›</span></button>
@@ -215,7 +260,7 @@ function Dashboard({ activeTarget, onExplainRelease }) {
 
         <Card className="opportunity-card" id="opportunities" activeTarget={activeTarget}>
           <CardTitle title="Today's Opportunities" />
-          <div className="opportunity-stats">
+          <div className={`opportunity-stats ${activeTarget === "opportunity-stats" ? "targeted-section" : ""}`}>
             <Stat label="High Interest" value="0" />
             <Stat label="Likely Sellers" value="0" />
             <Stat label="Back to Site" value="0" />
@@ -261,9 +306,30 @@ function Dashboard({ activeTarget, onExplainRelease }) {
   );
 }
 
-function Card({ children, className = "", id, activeTarget }) {
+function GuidanceLayer({ activeTarget, cursorLabel, cursorPulse }) {
+  if (!activeTarget) return null;
+
   return (
-    <section className={`card ${className} ${activeTarget === id ? "active-explain" : ""}`}>
+    <div
+      key={`${activeTarget}-${cursorPulse}`}
+      className={`ai-cursor cursor-${activeTarget}`}
+      aria-hidden="true"
+    >
+      <span className="ai-cursor-pulse" />
+      <span className="ai-cursor-pointer" />
+      <span className="ai-cursor-label">{cursorLabel || "Lofty Academy"}</span>
+    </div>
+  );
+}
+
+function Card({ children, className = "", id, activeTarget }) {
+  const isActive =
+    activeTarget === id ||
+    (id === "new-leads" && activeTarget === "score-chip") ||
+    (id === "opportunities" && activeTarget === "opportunity-stats");
+
+  return (
+    <section className={`card ${className} ${isActive ? "active-explain" : ""}`}>
       {children}
     </section>
   );
@@ -281,9 +347,9 @@ function CardTitle({ title, showGear = false }) {
   );
 }
 
-function LeadRow({ name, type, source, score }) {
+function LeadRow({ name, type, source, score, active = false }) {
   return (
-    <article className="lead-row">
+    <article className={`lead-row ${active ? "score-active" : ""}`}>
       <div>
         <h4>{name}</h4>
         <p>{type}</p>
@@ -291,6 +357,22 @@ function LeadRow({ name, type, source, score }) {
       </div>
       <span className="score">{score}</span>
     </article>
+  );
+}
+
+function LeadScoreInsight() {
+  return (
+    <aside className="lead-insight-panel" aria-label="Lead score explanation">
+      <div>
+        <span>Why 59?</span>
+        <strong>Lead score evidence</strong>
+      </div>
+      <ul>
+        <li>New Facebook lead with valid contact details</li>
+        <li>Renter intent, not yet a high purchase signal</li>
+        <li>No agent outreach yet, so Lofty recommends first contact</li>
+      </ul>
+    </aside>
   );
 }
 
