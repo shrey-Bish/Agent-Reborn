@@ -136,7 +136,7 @@ Implemented:
 - Top navigation: Lofty logo, CRM, Sales, Marketing, Content, Automation, Reporting,
   Marketplace, AI Copilots, search, avatar
 - Right utility rail with icon strip
-- "Good Afternoon, Baylee!" greeting and Today's Priorities control
+- "Good Afternoon, Shrey!" greeting and Today's Priorities control
 - Top-right navbar toggle: **Academy mode** (toggles on/off with animation)
 - New Updates / Announcements card
 - Today's New Leads with Emily Wilson (score 59), Carlos Garcia (44), Samuel Scott (43)
