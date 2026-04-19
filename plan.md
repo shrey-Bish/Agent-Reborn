@@ -14,6 +14,11 @@ The scalable product story:
 > Lofty Academy turns it into a guided lesson, validates the steps against a staging
 > CRM, and publishes it to the right users.
 
+Primary release-note source for the demo:
+
+- Lofty Help Center release notes, starting with Lofty 4.40:
+  `https://help.lofty.com/hc/en-us/articles/48927271391259-Feature-Updates-for-Lofty-4-40`
+
 This directly targets the sponsor prompt:
 
 - **Main sponsor track:** Lofty AI-Native PM
@@ -120,6 +125,7 @@ New user watches AI operate CRM + asks questions
 - **Tutor UI:** transcript, lesson progress, question input, voice playback
 - **Voice output:** ElevenLabs
 - **Voice input:** optional Web Speech API fallback; typed question is safer
+- **Guidance layer:** product-scoped AI cursor, highlight ring, and click animation
 - **Browser/action layer:** Stagehand or deterministic scripted UI actions
 - **Primary backend:** Insforge
 - **Backend logic:** lesson generation, Q&A, lesson validation, progress tracking, and publishing
@@ -347,11 +353,33 @@ Use the provided Lofty account to learn:
 - Smart Plans wording
 - What a new agent would find confusing
 
+Also use the Lofty 4.40 release note as the first release-update source. The key
+updates to support in the explanation layer are:
+
+- Transaction Role Default Person Setting
+- Vendor/Partner Optimization
+- Transaction Lead Portal
+- Sales Agent: Digital Employee
+- Sales Agent: Smarter AI Conversations
+- Smart Plan Performance
+
 Do not store credentials in code, logs, screenshots, or the repo.
 
 ### Phase 1 - High-Fidelity Mock CRM
 
-Build only what the demo needs:
+Build the first dashboard to match the attached Lofty screenshot as closely as possible:
+
+- Top Lofty navigation with CRM, Sales, Marketing, Content, Automation, Reporting,
+  Marketplace, and AI Copilots
+- Search bar and user avatar
+- Right utility rail
+- "Good Evening, Baylee!" dashboard greeting
+- New Updates / Announcements card
+- Today's New Leads card
+- Today's Opportunities card
+- Need Keep In Touch, Transactions, and Today's Tasks lower cards
+
+Then add only what the demo needs:
 
 - Dashboard
 - Today's Opportunities widget
@@ -389,6 +417,23 @@ Build the right-side tutor panel:
 
 The interface should feel like a product feature, not a chatbot bolted onto the side.
 
+Also build the Clicky-like interaction pattern, but scoped to Lofty:
+
+- A blue AI cursor overlay that lives inside the CRM dashboard, not the OS desktop
+- Smooth movement to the card or field being explained
+- Highlight ring around the target element
+- Small click pulse when the tutor "opens" or selects something
+- Voice narration synchronized with cursor movement
+- Typed Q&A first, optional microphone input later
+
+Important positioning:
+
+> We are not building a general screen buddy. We are using that interaction model to
+> solve Lofty's onboarding and release-adoption problem.
+
+Avoid OS-level cursor control in the demo. Keep the cursor/highlight layer inside the
+web app so the experience is reliable, safe, and clearly product-native.
+
 ### Phase 3 - Insforge Backend
 
 Implement the real backend path before polishing extras:
@@ -411,16 +456,18 @@ Steps:
 1. Open dashboard.
 2. Explain "Need Keep In Touch."
 3. Highlight "Today's Opportunities."
-4. Explain why these are AI-prioritized signals.
-5. Move toward lead score.
+4. Move the AI cursor to High Interest / Likely Sellers / Back to Site.
+5. Explain why these are AI-prioritized signals.
+6. Move toward lead score.
 
 Interrupt:
 
 - User asks: "Wait, what is a lead score?"
 - AI pauses lesson.
-- Navigates to People.
-- Opens Marcus Webb.
-- Explains score 87 and the activity behind it.
+- AI cursor moves to Today's New Leads.
+- It highlights Emily Wilson's score chip.
+- It opens or reveals a lead-score explanation panel.
+- It explains the score and the activity behind it.
 - Returns to the dashboard lesson.
 
 This is the demo's core proof.
@@ -604,12 +651,13 @@ Build our own controlled web app instead.
 
 1. Mock CRM and tutor panel
 2. Insforge Auth + Postgres persistence
-3. Golden path lesson
-4. Interrupt question flow with Q&A event logging
-5. Release-note generator saved through Insforge
-6. Live deployment
-7. ElevenLabs voice output
-8. Demo polish and recording
-9. Slides / written rationale
+3. Product-scoped AI cursor/highlight layer
+4. Golden path lesson
+5. Interrupt question flow with Q&A event logging
+6. Release-note generator saved through Insforge
+7. Live deployment
+8. ElevenLabs voice output
+9. Demo polish and recording
+10. Slides / written rationale
 
 If only one thing is perfect, make the interrupt demo perfect.

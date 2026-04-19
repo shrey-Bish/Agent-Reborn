@@ -6,11 +6,16 @@ Lofty Academy is an AI onboarding tutor that teaches new real estate agents by o
 a Lofty-style CRM in front of them, explaining AI features, answering questions mid-flow,
 and generating new lessons from future product release notes.
 
+For the first demo, the dashboard should visually match the attached Lofty screenshot,
+and the release-update source should start with Lofty 4.40:
+
+`https://help.lofty.com/hc/en-us/articles/48927271391259-Feature-Updates-for-Lofty-4-40`
+
 ## What We Are Building
 
 We are building a demo web app, not automating the real Lofty production account.
 
-The demo has four main pieces:
+The demo has five main pieces:
 
 1. **Mock Lofty CRM**
    A realistic CRM interface with dashboard, Today's Opportunities, People, lead score,
@@ -20,11 +25,16 @@ The demo has four main pieces:
    A right-side onboarding assistant that narrates a lesson, tracks progress, and lets
    the user ask a question while the lesson is running.
 
-3. **Release Lesson Generator**
+3. **AI Cursor / Guidance Layer**
+   A Clicky-like interaction pattern scoped to the Lofty web app: the AI can move a
+   blue cursor inside the CRM, highlight cards, pulse-click targets, and speak while it
+   guides the user.
+
+4. **Release Lesson Generator**
    An internal admin screen where a PM pastes a structured release note and the system
    generates a new guided onboarding lesson.
 
-4. **Insforge Backend**
+5. **Insforge Backend**
    The real backend for auth, database persistence, release-note storage, lesson
    generation, progress tracking, and Q&A logging.
 
@@ -95,9 +105,10 @@ This is the moment the demo must nail:
 2. AI explains Today's Opportunities.
 3. User asks: "Wait, what is a lead score?"
 4. AI pauses the lesson.
-5. AI opens the People page and selects Marcus Webb.
-6. AI explains why Marcus has a score of 87.
-7. AI says, "Back to where we were," and returns to the dashboard lesson.
+5. AI cursor moves to Today's New Leads and highlights the score chip.
+6. AI opens or reveals the lead-score explanation.
+7. AI explains why the lead has that score.
+8. AI says, "Back to where we were," and returns to the dashboard lesson.
 
 This proves the product is not a static tutorial, chatbot, or video. It is contextual,
 interactive onboarding.
@@ -108,6 +119,10 @@ interactive onboarding.
 
 Needs:
 
+- Top navigation matching the screenshot: Lofty logo, CRM, Sales, Marketing, Content,
+  Automation, Reporting, Marketplace, AI Copilots, search, avatar
+- Right utility rail
+- "Good Evening, Baylee!" greeting and Today's Priorities control
 - Onboarding mode banner
 - Need Keep In Touch widget
 - Today's Opportunities widget
@@ -169,6 +184,11 @@ are hard to understand or trust.
 context, and auto-generates lessons from release notes. Insforge powers auth, lesson
 storage, release persistence, progress tracking, and Q&A logging.
 
+**Clicky comparison:** We borrow the interaction model of talking, pointing, and guiding,
+but we do not build a general desktop screen buddy. Our cursor/highlight layer is scoped
+inside Lofty and connected to onboarding state, CRM concepts, release notes, and lesson
+progress.
+
 **Business case:** Faster activation, fewer support tickets, higher AI feature adoption,
 better retention, premium brokerage onboarding.
 
@@ -183,18 +203,20 @@ rollout, triggered lessons for users who have not adopted AI features.
 
 1. Make the mock CRM look credible.
 2. Wire Insforge Auth and Postgres persistence.
-3. Make the tutor flow smooth.
-4. Make the interrupt question work and log it.
-5. Add release generator for scalability.
-6. Deploy the live app.
-7. Add ElevenLabs voice output if time allows.
-8. Polish and record the demo.
+3. Add the product-scoped AI cursor/highlight layer.
+4. Make the tutor flow smooth.
+5. Make the interrupt question work and log it.
+6. Add release generator for scalability.
+7. Deploy the live app.
+8. Add ElevenLabs voice output if time allows.
+9. Polish and record the demo.
 
 ## Things To Avoid
 
 - Do not build five full lessons.
 - Do not depend on live Lofty in the final demo.
-- Do not use coordinate-clicking tools as the core architecture.
+- Do not use OS-level coordinate-clicking tools as the core architecture.
+- Do not pitch this as a generic Clicky clone.
 - Do not over-focus on the tech stack in the pitch.
 - Do not split the Lofty pitch across multiple entry points.
 
@@ -204,3 +226,9 @@ Use this line often:
 
 > Lofty Academy is not a hardcoded tutorial library. It is a release-aware onboarding
 > system: every new Lofty feature can become an interactive, validated, in-product lesson.
+
+For Clicky comparisons:
+
+> Clicky is a general screen companion. Lofty Academy is a product-native onboarding
+> and release education layer that uses a similar talk-and-guide interaction, but only
+> to help agents understand and trust Lofty's AI workflows.
