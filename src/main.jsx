@@ -359,6 +359,9 @@ function App() {
 
   /* ── refs ────────────────────── */
   const lessonStateRef = useRef("IDLE");
+  const activeLessonRef = useRef(null);
+  const waitingForResumeRef = useRef(false);
+  const micActiveRef = useRef(false);
   const lessonRunId = useRef(0);
   const currentAudioRef = useRef(null);
   const chatAreaRef = useRef(null);
@@ -454,7 +457,7 @@ function App() {
       const result = await synthesizeLessonSpeech(text);
       if (
         result?.audioBase64 &&
-        lessonStateRef.current !== "INTERRUPTED"
+        lessonStateRef.current !== "IDLE"
       ) {
         const audio = new Audio(
           `data:${result.mimeType || "audio/mpeg"};base64,${result.audioBase64}`
@@ -543,6 +546,7 @@ function App() {
     setShowPlanCreator(false);
     setCursorTarget(null);
 
+    activeLessonRef.current = lesson;
     setActiveLesson(lesson);
     lessonStateRef.current = "PLAYING";
     setLessonState("PLAYING");
@@ -588,7 +592,9 @@ function App() {
     setCursorTarget(null);
     lessonStateRef.current = "IDLE";
     setLessonState("IDLE");
+    activeLessonRef.current = null;
     setActiveLesson(null);
+    waitingForResumeRef.current = false;
     setWaitingForResume(false);
     setCrmView("dashboard");
     setShowLeadDrawer(false);
@@ -603,7 +609,7 @@ function App() {
 
     try {
       await recordQuestionEvent({
-        lessonId: activeLesson?.id || null,
+        lessonId: activeLessonRef.current?.id || null,
         question: "User interrupt during lesson",
         answerSummary: interruptData.answer.substring(0, 200),
         sourceScreen: crmView,
@@ -615,10 +621,12 @@ function App() {
     await speakNarration(interruptData.answer);
     await wait(600);
     await speakNarration(interruptData.resumePrompt);
+    waitingForResumeRef.current = true;
     setWaitingForResume(true);
   }
 
   function resumeLesson() {
+    waitingForResumeRef.current = false;
     setWaitingForResume(false);
     lessonStateRef.current = "PLAYING";
     setLessonState("PLAYING");
@@ -633,17 +641,18 @@ function App() {
     addMessage("user", text);
     const lower = text.toLowerCase().trim();
 
-    // Resume check
-    if (waitingForResume) {
+    // Resume check — use ref to avoid stale closure
+    if (waitingForResumeRef.current) {
       if (/\b(yes|yeah|yep|sure|continue|proceed|go ahead|ok|okay)\b/.test(lower)) {
         resumeLesson();
         return;
       }
     }
 
-    // Interrupt check
-    if (lessonStateRef.current === "PLAYING" && activeLesson) {
-      for (const [trigger, data] of Object.entries(activeLesson.interrupts || {})) {
+    // Interrupt check — use ref to avoid stale closure
+    const lesson = activeLessonRef.current;
+    if (lessonStateRef.current === "PLAYING" && lesson) {
+      for (const [trigger, data] of Object.entries(lesson.interrupts || {})) {
         if (lower.includes(trigger)) {
           stopCurrentAudio();
           handleInterrupt(data);
@@ -691,25 +700,44 @@ function App() {
     }
 
     if (micActive) {
-      if (recognitionRef.current) recognitionRef.current.stop();
+      micActiveRef.current = false;
       setMicActive(false);
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) { /* ignore */ }
+        recognitionRef.current = null;
+      }
       return;
     }
 
     const recog = new SpeechRecognition();
-    recog.continuous = false;
+    recog.continuous = true;
     recog.interimResults = false;
     recog.lang = "en-US";
 
     recog.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      processUserMessage(transcript);
+      const last = event.results[event.results.length - 1];
+      if (last.isFinal) {
+        const transcript = last[0].transcript;
+        processUserMessage(transcript);
+      }
     };
-    recog.onend = () => setMicActive(false);
-    recog.onerror = () => setMicActive(false);
+    recog.onend = () => {
+      // Auto-restart if still active (browser may stop on silence)
+      if (micActiveRef.current) {
+        try { recog.start(); } catch(e) { micActiveRef.current = false; setMicActive(false); }
+      } else {
+        setMicActive(false);
+      }
+    };
+    recog.onerror = (e) => {
+      if (e.error === 'no-speech' || e.error === 'aborted') return;
+      micActiveRef.current = false;
+      setMicActive(false);
+    };
 
     recognitionRef.current = recog;
     recog.start();
+    micActiveRef.current = true;
     setMicActive(true);
   }
 
