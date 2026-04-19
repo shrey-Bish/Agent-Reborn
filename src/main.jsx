@@ -5,6 +5,8 @@ import {
   synthesizeLessonSpeech,
   recordQuestionEvent,
   recordLessonProgress,
+  askTutorQuestion,
+  fetchDemoProfiles,
   isInsforgeConfigured,
   fetchBackendSnapshot,
 } from "./insforgeBackend";
@@ -325,6 +327,11 @@ const SpeechRecognition =
 
 function App() {
   /* ── state ────────────────────── */
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("shrey@lofty.demo");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+
   const [academyOn, setAcademyOn] = useState(false);
   const [lpView, setLpView] = useState("main"); // main | lessons | releases | helpCenter | helpArticles | lessonActive
   const [expandedHC, setExpandedHC] = useState(null);
@@ -661,17 +668,83 @@ function App() {
       }
     }
 
-    // Default response
-    if (lessonStateRef.current === "PLAYING" || lessonStateRef.current === "INTERRUPTED") {
-      addMessage(
-        "ai",
-        "I hear you! I'm currently running the lesson. Try asking about a specific concept — like 'what is smart plan' or 'what is lead score'."
-      );
-    } else {
-      addMessage(
-        "ai",
-        "Great question! Select a lesson from the left panel to get started with an interactive walkthrough."
-      );
+    // AI-powered response for any question (no keyword match)
+    handleAIQuestion(text, lower);
+  }
+
+  async function handleAIQuestion(originalText, lower) {
+    const lesson = activeLessonRef.current;
+    const isInLesson = lessonStateRef.current === "PLAYING" || lessonStateRef.current === "INTERRUPTED";
+
+    // Pause lesson if playing so AI can answer
+    if (lessonStateRef.current === "PLAYING" && lesson) {
+      stopCurrentAudio();
+      lessonStateRef.current = "INTERRUPTED";
+      setLessonState("INTERRUPTED");
+      setCursorTarget(null);
+    }
+
+    addMessage("ai", "🤔 Thinking...");
+
+    try {
+      const result = await askTutorQuestion({
+        question: originalText,
+        lessonContext: lesson?.id || "general",
+        currentStep: currentStepIndex,
+      });
+
+      // Remove "Thinking..." and add actual answer
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.text !== "🤔 Thinking...");
+        return [...filtered, { type: "ai", text: result.answer, ts: Date.now() }];
+      });
+
+      // Speak the answer via ElevenLabs
+      if (isInsforgeConfigured) {
+        try {
+          const voiceResult = await synthesizeLessonSpeech(result.answer);
+          if (voiceResult?.audioBase64 && lessonStateRef.current !== "IDLE") {
+            const audio = new Audio(
+              `data:${voiceResult.mimeType || "audio/mpeg"};base64,${voiceResult.audioBase64}`
+            );
+            currentAudioRef.current = audio;
+            setIsSpeaking(true);
+            await new Promise(resolve => {
+              audio.onended = () => { setIsSpeaking(false); currentAudioRef.current = null; resolve(); };
+              audio.onerror = () => { setIsSpeaking(false); currentAudioRef.current = null; resolve(); };
+              audio.play().catch(() => { setIsSpeaking(false); currentAudioRef.current = null; resolve(); });
+            });
+          }
+        } catch(e) { /* voice fallback — answer already shown as text */ }
+      }
+
+      // Log Q&A event
+      try {
+        await recordQuestionEvent({
+          lessonId: lesson?.id || null,
+          question: originalText,
+          answerSummary: result.answer.substring(0, 200),
+          sourceScreen: crmView,
+        });
+      } catch(e) { /* ignore */ }
+
+      // If we were in a lesson, ask to resume
+      if (isInLesson && lesson) {
+        const resumeMsg = "Would you like me to continue with the lesson?";
+        await speakNarration(resumeMsg);
+        waitingForResumeRef.current = true;
+        setWaitingForResume(true);
+      }
+    } catch(err) {
+      // Remove thinking message and show fallback
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.text !== "🤔 Thinking...");
+        return [...filtered, {
+          type: "ai",
+          text: "Great question! Select a lesson from the left panel to get started with an interactive walkthrough.",
+          ts: Date.now()
+        }];
+      });
     }
   }
 
@@ -794,7 +867,7 @@ function App() {
       <div id="crm-content">
         <div className="dash-header">
           <div className="dash-greeting">
-            👋 Good Afternoon, Baylee!
+            👋 Good Afternoon, Shrey!
             <div className="dash-dropdown">
               My Dashboard
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
@@ -1130,8 +1203,75 @@ function App() {
   }
 
   /* ══════════════════════════════
+     LOGIN HANDLER
+  ══════════════════════════════ */
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoginLoading(true);
+    try {
+      const profiles = await fetchDemoProfiles();
+      const match = profiles.find(p => p.email === loginEmail) || profiles[0];
+      setUserProfile(match);
+      setLoggedIn(true);
+    } catch(err) {
+      setUserProfile({ email: loginEmail, name: loginEmail.split("@")[0], role: "agent" });
+      setLoggedIn(true);
+    }
+    setLoginLoading(false);
+  }
+
+  /* ══════════════════════════════
      RENDER
   ══════════════════════════════ */
+
+  if (!loggedIn) {
+    return (
+      <div className="login-screen">
+        <div className="login-card">
+          <div className="login-logo">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3b5cde" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            <span>Lofty</span>
+          </div>
+          <h1 className="login-title">Welcome to Lofty</h1>
+          <p className="login-subtitle">Sign in to access your AI-powered CRM</p>
+
+          <form onSubmit={handleLogin}>
+            <div className="login-field">
+              <label>Email</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="login-field">
+              <label>Password</label>
+              <input type="password" defaultValue="••••••••" placeholder="Password" />
+            </div>
+            <button type="submit" className="login-btn" disabled={loginLoading}>
+              {loginLoading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+          <div className="login-demo-accounts">
+            <p>Demo account:</p>
+            <button className="login-demo-pick" onClick={() => setLoginEmail("shrey@lofty.demo")}>
+              🏠 shrey@lofty.demo <span>Agent</span>
+            </button>
+          </div>
+
+          <div className="login-footer">
+            Powered by <strong>Insforge</strong> • Auth + Database + Edge Functions
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="app">

@@ -184,3 +184,32 @@ export async function synthesizeLessonSpeech(text) {
 
   return result.data;
 }
+
+export async function askTutorQuestion({
+  question,
+  lessonContext = "general",
+  currentStep = 0,
+}) {
+  if (!isInsforgeConfigured) {
+    return {
+      answer:
+        "Great question! I'd recommend exploring that feature in your Lofty dashboard. Select a lesson from the left panel to get an interactive walkthrough.",
+      source: "offline-fallback",
+    };
+  }
+
+  const client = requireInsforge();
+  const result = await client.functions.invoke("answer-question", {
+    body: { question, lessonContext, currentStep },
+  });
+
+  if (result.error) {
+    return {
+      answer:
+        "That's a great question! Let me help you with that — try asking about a specific feature like Smart Plans or Lead Scoring, and I can walk you through it.",
+      source: "error-fallback",
+    };
+  }
+
+  return result.data;
+}
