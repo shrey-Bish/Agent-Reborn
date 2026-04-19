@@ -38,8 +38,9 @@ The demo has four product pillars:
    scores, and supporting CRM details.
 
 2. **Live AI guidance layer**
-   The user-facing magic now lives inside **Academy Mode**: left course list, center CRM
-   simulator, right AI chat history, tutor actions, Q&A interrupt, and voice output.
+   The user-facing magic now lives inside **Academy Mode**: a top-right navbar toggle,
+   animated top bar, left course/progress panel, zoomed full-dashboard CRM simulator,
+   right AI chat history, tutor actions, Q&A interrupt, and voice output.
 
 3. **Content-to-lesson engine**
    Release notes and Help Center tutorials are both source content. The system extracts
@@ -113,14 +114,14 @@ like lessons generated, users onboarded, and questions answered.
 This is the moment the demo must nail:
 
 1. New user starts the dashboard onboarding lesson.
-2. User clicks **Turn on Academy Mode** from the dashboard.
-3. The screen changes into a course workspace: lessons/completion on the left, simulator
-   in the middle, AI chat and voice on the right.
-4. AI explains Today's Opportunities.
-5. User asks: "Wait, what is a lead score?"
-6. AI pauses the lesson and highlights Emily Wilson's score chip.
-7. AI explains why the lead has that score.
-8. AI says, "Back to where we were," and returns to the dashboard lesson.
+2. User toggles **Academy mode** in the top-right navbar.
+3. The Academy overlay animates in: top bar first, left/right panels second, content fade third.
+4. The dashboard stays visible in the middle as a zoomed simulator, while lessons/completion
+   live on the left and AI chat/voice lives on the right.
+5. AI explains Today's Opportunities.
+6. User asks: "Wait, what is a lead score?"
+7. AI pauses the lesson and highlights Emily Wilson's score chip.
+8. AI explains why the lead has that score, then resumes the dashboard lesson.
 
 This proves the product is not a static tutorial, chatbot, or video. It is contextual,
 interactive onboarding.
@@ -135,7 +136,7 @@ Needs:
   Automation, Reporting, Marketplace, AI Copilots, search, avatar
 - Right utility rail
 - "Good Evening, Shrey!" greeting and Today's Priorities control
-- Button: **Turn on Academy Mode**
+- Top-right navbar toggle: **Academy mode**
 - Need Keep In Touch widget
 - Today's Opportunities widget
 - Today's New Leads with Emily Wilson, score 59
@@ -146,10 +147,19 @@ Needs:
 Needs:
 
 - Left panel with course lessons and completion state
-- Middle panel with the Lofty CRM simulator and red-box/cursor guidance
+- Middle panel with the zoomed full-dashboard Lofty CRM simulator and red-box/cursor guidance
 - Right panel with AI chat history, Q&A input, Voice button, lesson actions, and backend proof
 - Release lesson included in the course list, not treated as a separate product
 - Help Center extraction available as supporting proof, but not the main story
+
+Current implementation note:
+
+- The panel UI is intentionally replaceable for redesign, but the behavior is already wired.
+- Left panel lesson clicks move the live cursor and record progress through Insforge.
+- Right panel uses the live tutor: transcript, Ask flow, Resume lesson, Voice, release/help actions,
+  and backend proof counts.
+- The center CRM is a fixed full-dashboard stage that zooms down to fit the middle viewport,
+  so the dashboard does not reflow into a narrow layout.
 
 ### Content-to-Lesson Generator
 
@@ -220,7 +230,7 @@ rollout, triggered lessons for users who have not adopted AI features.
 1. Make the Lofty-style CRM sandbox look credible.
 2. Build the live AI guidance layer: tutor, cursor, highlights, red boxes/arrows, and Q&A interrupt.
 3. Wire Insforge demo profiles/Postgres persistence and log lesson/Q&A state.
-4. Make Academy Mode the main judged flow: course list, simulator, AI chat, voice, and Q&A.
+4. Make Academy Mode the main judged flow: animated overlay, course list, zoomed simulator, AI chat, voice, and Q&A.
 5. Keep release-note and Help Center lessons inside Academy Mode.
 6. Deploy the live app.
 7. Polish and record the demo.

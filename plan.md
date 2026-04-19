@@ -47,10 +47,12 @@ but agents may not understand what the AI is doing, where to find it, or why a n
 release matters. Lofty Academy turns product education into an active demonstration:
 
 1. The AI shows the dashboard.
-2. It explains "Today's Opportunities" and lead scores.
-3. The user interrupts: "Wait, what is a lead score?"
-4. The AI pauses, navigates to a lead profile, explains the score, and returns.
-5. Later, a release note or Help Center article becomes another guided lesson.
+2. The user turns on Academy Mode from the navbar.
+3. The dashboard stays visible in the center while left/right Academy panels animate in.
+4. It explains "Today's Opportunities" and lead scores with a live cursor.
+5. The user interrupts: "Wait, what is a lead score?"
+6. The AI pauses, moves to Emily Wilson's score, explains it, and returns.
+7. Later, a release note or Help Center article becomes another guided lesson.
 
 That Q&A interrupt is the "aha" moment. It proves this is not just a video, chatbot,
 or static checklist. It is contextual product education that teaches inside the product.
@@ -60,7 +62,7 @@ or static checklist. It is contextual product education that teaches inside the 
 ### Must Ship
 
 - A high-fidelity Lofty-style mock CRM
-- An embedded Lofty Academy tutor panel
+- Animated Academy Mode overlay with left course panel, center CRM simulator, and right AI panel
 - One polished onboarding lesson
 - One interruptible Q&A moment
 - One Help Center article converted into a numbered red-box / arrow walkthrough
@@ -136,10 +138,11 @@ New or experienced user watches AI operate CRM + asks questions
 
 - **Frontend:** React + Vite
 - **CRM demo:** Lofty-style mock CRM pages/components
-- **Tutor UI:** transcript, lesson progress, question input, voice playback
+- **Academy Mode UI:** navbar toggle, animated top bar, left course/progress panel,
+  center zoomed CRM simulator, right transcript/Q&A/voice panel
 - **Voice output:** ElevenLabs
 - **Voice input:** optional Web Speech API fallback; typed question is safer
-- **Guidance layer:** product-scoped AI cursor, highlight ring, and click animation
+- **Guidance layer:** product-scoped AI cursor, highlight ring, red boxes/arrows, and click animation
 - **Browser/action layer:** Stagehand or deterministic scripted UI actions
 - **Primary backend:** Insforge
 - **Backend logic:** lesson generation, Q&A, lesson validation, progress tracking, and publishing
@@ -492,14 +495,16 @@ Lesson 1: "Your AI-Powered Dashboard"
 Steps:
 
 1. Open the dashboard.
-2. Click **Turn on Academy Mode**.
-3. Show the three-column learning workspace:
-   left course list/completion, middle simulator, right AI chat history and voice.
-4. Explain "Need Keep In Touch."
-5. Highlight "Today's Opportunities."
-6. Move the AI cursor to High Interest / Likely Sellers / Back to Site.
-7. Explain why these are AI-prioritized signals.
-8. Move toward lead score.
+2. Toggle **Academy mode** in the top-right navbar.
+3. Show the staged animation:
+   top bar slides down first, left/right panels slide in next, panel content fades in.
+4. The existing CRM stays mounted in the center as a zoomed full-dashboard simulator,
+   not a reflowed or replaced view.
+5. Explain "Need Keep In Touch."
+6. Highlight "Today's Opportunities."
+7. Move the AI cursor to High Interest / Likely Sellers / Back to Site.
+8. Explain why these are AI-prioritized signals.
+9. Move toward lead score.
 
 Interrupt:
 
@@ -515,10 +520,13 @@ This is the demo's core proof.
 
 Current status:
 
-- Implemented in the prototype: the main dashboard has a **Turn on Academy Mode** button.
-  Academy Mode opens a left course list, middle Lofty simulator, and right AI chat panel.
-- The same workspace includes onboarding lessons, release-note lesson, Help Center
-  extraction, Q&A interrupt, Resume lesson, ElevenLabs voice, and Insforge backend proof.
+- Implemented in the prototype: the navbar has an **Academy mode** toggle.
+- Academy Mode is an animated overlay shell: center topbar, left course/progress panel,
+  right live AI transcript panel, and a zoomed full-dashboard CRM simulator in the middle.
+- Left panel is wired to real lessons: selecting a lesson moves the cursor live and
+  records progress through Insforge.
+- Right panel is wired to real AI behavior: chat history, Q&A interruption, Resume lesson,
+  release/help actions, ElevenLabs voice, and backend proof counts.
 - Next polish: redesign the Academy Mode visuals and tighten the demo narration.
 
 ### Phase 5 - Content-to-Lesson Generator
@@ -569,7 +577,7 @@ Record a polished 2-minute screen share.
 Suggested timing:
 
 - **0:00-0:15:** Problem: new agents face passive onboarding and do not trust AI features yet.
-- **0:15-0:35:** Log in to the live app and start a saved dashboard lesson.
+- **0:15-0:35:** Log in and toggle Academy mode; show the animated panels and zoomed simulator.
 - **0:35-1:10:** User asks "What is lead score?" AI pauses, navigates, explains, returns.
 - **1:10-1:30:** Show lesson summary and trust-building explanation.
 - **1:30-1:55:** Show content-to-lesson generator creating and saving a new lesson.
@@ -587,12 +595,13 @@ The bottleneck is not only training. It is AI adoption.
 
 ### The Solution
 
-Lofty Academy is a continuous AI product education layer. It operates the CRM, narrates
-what it is doing, handles user questions in context, and generates new lessons from
-release notes and existing Help Center tutorials so learning stays current as Lofty
-evolves. It can turn written documentation into live red-box / arrow callouts with
-cursor movement and narration. Insforge powers auth, lesson storage, release/tutorial
-persistence, progress tracking, Q&A logging, and backend lesson generation.
+Lofty Academy is a continuous AI product education layer. It opens as Academy Mode on top
+of the CRM: lessons and completion on the left, the full CRM simulator in the center, and
+AI chat/voice on the right. It operates the CRM, narrates what it is doing, handles user
+questions in context, and generates new lessons from release notes and existing Help
+Center tutorials so learning stays current as Lofty evolves. Insforge powers demo
+profiles, lesson storage, release/tutorial persistence, progress tracking, Q&A logging,
+voice Edge Functions, and backend lesson generation.
 
 ### The Business Case
 
@@ -716,7 +725,7 @@ Build our own controlled web app instead.
 ## Final Build Priority
 
 1. Lofty-style CRM sandbox
-2. Academy Mode as the main judged surface: course list, simulator, AI chat, voice, and Q&A
+2. Academy Mode as the main judged surface: animated overlay, course list, zoomed simulator, AI chat, voice, and Q&A
 3. Insforge demo profiles + Postgres persistence
 4. Golden path onboarding lesson
 5. Release-note and Help Center lessons inside Academy Mode

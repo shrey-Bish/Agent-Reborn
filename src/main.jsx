@@ -695,7 +695,19 @@ function App() {
         <>
           <AcademyTopBar visible={topBarVisible} onClose={closeAcademyMode} />
           <div className={`crm-layout ${academyMode ? "academy-active" : ""}`}>
-            <LeftPanel open={leftPanelOpen} contentVisible={panelContentVisible} />
+            <LeftPanel
+              open={leftPanelOpen}
+              contentVisible={panelContentVisible}
+              activeTarget={activeTarget}
+              lessonIndex={lessonIndex}
+              releaseMode={releaseMode}
+              knowledgeMode={knowledgeMode}
+              backendLessons={backendLessons}
+              backendStatus={backendStatus}
+              onSelectLessonStep={selectLessonStep}
+              onExplainRelease={explainRelease}
+              onExplainHelpTutorial={explainHelpTutorial}
+            />
             <div className="crm-viewport">
               <div
                 className="crm-stage"
@@ -714,7 +726,32 @@ function App() {
                 </div>
               </div>
             </div>
-            <RightPanel open={rightPanelOpen} contentVisible={panelContentVisible} />
+            <RightPanel
+              open={rightPanelOpen}
+              contentVisible={panelContentVisible}
+              activeStep={activeStep}
+              lessonIndex={lessonIndex}
+              messages={messages}
+              question={question}
+              releaseMode={releaseMode}
+              knowledgeMode={knowledgeMode}
+              currentUpdate={currentUpdate}
+              helpCenterTutorial={helpCenterTutorial}
+              activeBackendLesson={activeBackendLesson}
+              backendStatus={backendStatus}
+              currentUser={currentUser}
+              voiceStatus={voiceStatus}
+              hasActiveTarget={Boolean(activeTarget)}
+              hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
+              setQuestion={setQuestion}
+              onAskQuestion={askQuestion}
+              onNextStep={nextStep}
+              onExplainRelease={explainRelease}
+              onExplainHelpTutorial={explainHelpTutorial}
+              onGenerateBackendLesson={generateBackendLesson}
+              onPlayVoice={playLessonVoice}
+              onClose={closeAcademyMode}
+            />
           </div>
         </>
       )}
@@ -810,31 +847,144 @@ function AcademyTopBar({ visible, onClose }) {
   );
 }
 
-function LeftPanel({ open, contentVisible }) {
+function LeftPanel({
+  open,
+  contentVisible,
+  activeTarget,
+  lessonIndex,
+  releaseMode,
+  knowledgeMode,
+  backendLessons,
+  backendStatus,
+  onSelectLessonStep,
+  onExplainRelease,
+  onExplainHelpTutorial,
+}) {
+  const releaseLesson = findLessonBySourceType(backendLessons, "release_note");
+  const helpLesson = findLessonBySourceType(backendLessons, "help_center_article");
+  const completedCoreCount = activeTarget
+    ? Math.min(lessonIndex + 1, lessonSteps.length)
+    : 0;
+  const totalLessons = lessonSteps.length + 2;
+  const completedCount =
+    completedCoreCount + (releaseMode ? 1 : 0) + (knowledgeMode ? 1 : 0);
+
   return (
     <aside className={`left-panel ${open ? "open" : ""}`} aria-label="Academy lessons">
       <div className={`panel-content ${contentVisible ? "visible" : ""}`}>
-        <div className="panel-placeholder">
-          <span>Lessons</span>
-          <div />
-          <div />
-          <div />
+        <div className="academy-left-content">
+          <header className="academy-left-header">
+            <span>Lofty Academy</span>
+            <h2>AI-Guided Mastery</h2>
+            <p>My courses <strong>{Math.round((completedCount / totalLessons) * 100)}% Complete</strong></p>
+          </header>
+
+          <nav className="academy-course-list" aria-label="Academy course navigation">
+            {lessonSteps.map((step, index) => {
+              const isActive = activeTarget === step.target;
+              const isComplete = activeTarget && index < lessonIndex;
+              return (
+                <button
+                  key={step.target}
+                  className={isActive ? "active" : ""}
+                  onClick={() => onSelectLessonStep(index)}
+                >
+                  <span>{isComplete ? "✓" : index + 1}</span>
+                  <div>
+                    <strong>{step.label}</strong>
+                    <small>{isActive ? "Cursor live now" : isComplete ? "Complete" : "Lesson"}</small>
+                  </div>
+                </button>
+              );
+            })}
+            <button className={releaseMode ? "active" : ""} onClick={onExplainRelease}>
+              <span>↗</span>
+              <div>
+                <strong>Lofty 4.40 Release</strong>
+                <small>{releaseLesson ? "Backend lesson ready" : "Release update lesson"}</small>
+              </div>
+            </button>
+            <button className={knowledgeMode ? "active" : ""} onClick={onExplainHelpTutorial}>
+              <span>?</span>
+              <div>
+                <strong>Help Center Tutorial</strong>
+                <small>{helpLesson ? "Extracted from docs" : "Documentation lesson"}</small>
+              </div>
+            </button>
+          </nav>
+
+          <section className="academy-progress-card">
+            <strong>{Math.round((completedCount / totalLessons) * 100)}%</strong>
+            <span>Overall</span>
+            <div>
+              <span style={{ width: `${(completedCount / totalLessons) * 100}%` }} />
+            </div>
+          </section>
+
+          <section className="academy-proof-card">
+            <span>Live backend</span>
+            <p>{backendStatus.lessonCount} lessons · {backendStatus.questionCount} Q&A · {backendStatus.progressCount} progress</p>
+          </section>
         </div>
       </div>
     </aside>
   );
 }
 
-function RightPanel({ open, contentVisible }) {
+function RightPanel({
+  open,
+  contentVisible,
+  activeStep,
+  lessonIndex,
+  messages,
+  question,
+  releaseMode,
+  knowledgeMode,
+  currentUpdate,
+  helpCenterTutorial,
+  activeBackendLesson,
+  backendStatus,
+  currentUser,
+  voiceStatus,
+  hasActiveTarget,
+  hasResumeTarget,
+  setQuestion,
+  onAskQuestion,
+  onNextStep,
+  onExplainRelease,
+  onExplainHelpTutorial,
+  onGenerateBackendLesson,
+  onPlayVoice,
+  onClose,
+}) {
   return (
     <aside className={`right-panel ${open ? "open" : ""}`} aria-label="Academy AI chat">
       <div className={`panel-content ${contentVisible ? "visible" : ""}`}>
-        <div className="panel-placeholder">
-          <span>AI chat history</span>
-          <div />
-          <div />
-          <div />
-        </div>
+        <AcademyTutor
+          docked
+          activeStep={activeStep}
+          lessonIndex={lessonIndex}
+          messages={messages}
+          question={question}
+          releaseMode={releaseMode}
+          knowledgeMode={knowledgeMode}
+          currentUpdate={currentUpdate}
+          helpCenterTutorial={helpCenterTutorial}
+          activeBackendLesson={activeBackendLesson}
+          backendStatus={backendStatus}
+          currentUser={currentUser}
+          voiceStatus={voiceStatus}
+          hasActiveTarget={hasActiveTarget}
+          hasResumeTarget={hasResumeTarget}
+          setQuestion={setQuestion}
+          onAskQuestion={onAskQuestion}
+          onNextStep={onNextStep}
+          onExplainRelease={onExplainRelease}
+          onExplainHelpTutorial={onExplainHelpTutorial}
+          onGenerateBackendLesson={onGenerateBackendLesson}
+          onPlayVoice={onPlayVoice}
+          onClose={onClose}
+        />
       </div>
     </aside>
   );
