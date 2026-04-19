@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import {
@@ -126,6 +126,21 @@ function App() {
   const [academyMode, setAcademyMode] = useState(
     startWithHelpExtraction || startWithReleaseExplanation,
   );
+  const [topBarVisible, setTopBarVisible] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation,
+  );
+  const [leftPanelOpen, setLeftPanelOpen] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation,
+  );
+  const [rightPanelOpen, setRightPanelOpen] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation,
+  );
+  const [panelContentVisible, setPanelContentVisible] = useState(
+    startWithHelpExtraction || startWithReleaseExplanation,
+  );
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1440,
+  );
   const [tutorOpen, setTutorOpen] = useState(
     startWithHelpExtraction || startWithReleaseExplanation,
   );
@@ -192,6 +207,7 @@ function App() {
     return startingMessages;
   });
   const [releaseMode, setReleaseMode] = useState(startWithReleaseExplanation);
+  const academyTimers = useRef([]);
 
   const activeStep = lessonSteps[lessonIndex];
   const activeCursorLabel =
@@ -199,11 +215,33 @@ function App() {
     lessonSteps.find((step) => step.target === activeTarget)?.cursorLabel ||
     activeStep.cursorLabel;
   const currentUpdate = useMemo(() => releaseUpdates[2], []);
+  const academyScale = Math.min(1, (viewportWidth * 0.54) / 1440);
 
   useEffect(() => {
     refreshBackendStatus();
     loadDemoProfiles();
+
+    function handleResize() {
+      setViewportWidth(window.innerWidth);
+    }
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      clearAcademyTimers();
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
+
+  function clearAcademyTimers() {
+    academyTimers.current.forEach((timer) => window.clearTimeout(timer));
+    academyTimers.current = [];
+  }
+
+  function scheduleAcademyStep(callback, delay) {
+    const timer = window.setTimeout(callback, delay);
+    academyTimers.current.push(timer);
+  }
 
   async function loadDemoProfiles() {
     try {
@@ -236,7 +274,7 @@ function App() {
 
   function demoLogout() {
     setCurrentUser(null);
-    setAcademyMode(false);
+    closeAcademyMode();
     setTutorOpen(false);
     setActiveTarget(null);
     setLeadInsightOpen(false);
@@ -289,15 +327,31 @@ function App() {
 
   function guideTo(target, options = {}) {
     setTutorOpen(true);
-    setAcademyMode(true);
+    openAcademyMode();
     setActiveTarget(target);
     setLeadInsightOpen(target === "score-chip" || options.showLeadInsight === true);
     setCursorPulse((value) => value + 1);
   }
 
-  function openAcademy() {
+  function openAcademyMode() {
+    clearAcademyTimers();
     setAcademyMode(true);
     setTutorOpen(true);
+    setTopBarVisible(true);
+    setPanelContentVisible(false);
+
+    scheduleAcademyStep(() => {
+      setLeftPanelOpen(true);
+      setRightPanelOpen(true);
+    }, 120);
+
+    scheduleAcademyStep(() => {
+      setPanelContentVisible(true);
+    }, 500);
+  }
+
+  function openAcademy() {
+    openAcademyMode();
     setActiveTarget(null);
     setLessonIndex(0);
     setResumeLessonIndex(null);
@@ -307,12 +361,31 @@ function App() {
     setActiveBackendLesson(null);
   }
 
-  function closeAcademy() {
-    setAcademyMode(false);
-    setTutorOpen(false);
-    setActiveTarget(null);
-    setResumeLessonIndex(null);
-    setLeadInsightOpen(false);
+  function closeAcademyMode() {
+    clearAcademyTimers();
+    setPanelContentVisible(false);
+
+    scheduleAcademyStep(() => {
+      setLeftPanelOpen(false);
+      setRightPanelOpen(false);
+    }, 80);
+
+    scheduleAcademyStep(() => {
+      setTopBarVisible(false);
+      setAcademyMode(false);
+      setTutorOpen(false);
+      setActiveTarget(null);
+      setResumeLessonIndex(null);
+      setLeadInsightOpen(false);
+    }, 300);
+  }
+
+  function toggleAcademyMode() {
+    if (academyMode || topBarVisible || leftPanelOpen || rightPanelOpen) {
+      closeAcademyMode();
+    } else {
+      openAcademy();
+    }
   }
 
   function selectLessonStep(index) {
@@ -323,7 +396,7 @@ function App() {
       backendLessons[0] ||
       null;
 
-    setAcademyMode(true);
+    openAcademyMode();
     setTutorOpen(true);
     setActiveBackendLesson(lesson);
     setLessonIndex(index);
@@ -590,7 +663,13 @@ function App() {
 
   return (
     <main className="lofty-shell">
-      <TopNav currentUser={currentUser} onOpenAcademy={openAcademy} onLogout={demoLogout} />
+      <TopNav
+        currentUser={currentUser}
+        academyModeActive={academyMode || topBarVisible || leftPanelOpen || rightPanelOpen}
+        onToggleAcademy={toggleAcademyMode}
+        onOpenAcademy={openAcademy}
+        onLogout={demoLogout}
+      />
       {!currentUser ? (
         <DemoLogin
           profiles={demoProfiles}
@@ -598,8 +677,8 @@ function App() {
           onLogin={demoLogin}
         />
       ) : null}
-      <div className={`workspace ${academyMode ? "academy-workspace" : ""}`}>
-        {currentUser?.role === "admin" ? (
+      {currentUser?.role === "admin" ? (
+        <div className="workspace">
           <ContentLessonStudio
             sourceText={studioSourceText}
             result={studioResult}
@@ -611,52 +690,34 @@ function App() {
             onGenerate={generateStudioLesson}
             onPublish={publishStudioLesson}
           />
-        ) : academyMode ? (
-          <AcademyMode
-            userName={currentUser?.name || "Shrey Demo"}
-            activeTarget={tutorOpen ? activeTarget : null}
-            cursorLabel={activeCursorLabel}
-            cursorPulse={cursorPulse}
-            leadInsightOpen={leadInsightOpen}
-            lessonIndex={lessonIndex}
-            activeTargetName={activeTarget}
-            releaseMode={releaseMode}
-            knowledgeMode={knowledgeMode}
-            backendLessons={backendLessons}
-            activeStep={activeStep}
-            messages={messages}
-            question={question}
-            currentUpdate={currentUpdate}
-            helpCenterTutorial={helpCenterTutorial}
-            activeBackendLesson={activeBackendLesson}
-            backendStatus={backendStatus}
-            currentUser={currentUser}
-            voiceStatus={voiceStatus}
-            hasActiveTarget={Boolean(activeTarget)}
-            hasResumeTarget={resumeLessonIndex !== null && activeTarget === "score-chip"}
-            setQuestion={setQuestion}
-            onSelectLessonStep={selectLessonStep}
-            onAskQuestion={askQuestion}
-            onNextStep={nextStep}
-            onExplainRelease={explainRelease}
-            onExplainHelpTutorial={explainHelpTutorial}
-            onGenerateBackendLesson={generateBackendLesson}
-            onPlayVoice={playLessonVoice}
-            onClose={closeAcademy}
-          />
-        ) : (
-          <Dashboard
-            userName={currentUser?.name || "Shrey Demo"}
-            activeTarget={tutorOpen ? activeTarget : null}
-            cursorLabel={activeCursorLabel}
-            cursorPulse={cursorPulse}
-            leadInsightOpen={leadInsightOpen}
-            onExplainRelease={explainRelease}
-            onOpenAcademyMode={openAcademy}
-          />
-        )}
-        {!academyMode ? <RightRail /> : null}
-      </div>
+        </div>
+      ) : (
+        <>
+          <AcademyTopBar visible={topBarVisible} onClose={closeAcademyMode} />
+          <div className={`crm-layout ${academyMode ? "academy-active" : ""}`}>
+            <LeftPanel open={leftPanelOpen} contentVisible={panelContentVisible} />
+            <div className="crm-viewport">
+              <div
+                className="crm-stage"
+                style={{ "--academy-scale": academyMode ? academyScale : 1 }}
+              >
+                <div className="workspace">
+                  <Dashboard
+                    userName={currentUser?.name || "Shrey Demo"}
+                    activeTarget={tutorOpen ? activeTarget : null}
+                    cursorLabel={activeCursorLabel}
+                    cursorPulse={cursorPulse}
+                    leadInsightOpen={leadInsightOpen}
+                    onExplainRelease={explainRelease}
+                  />
+                  <RightRail />
+                </div>
+              </div>
+            </div>
+            <RightPanel open={rightPanelOpen} contentVisible={panelContentVisible} />
+          </div>
+        </>
+      )}
       {tutorOpen && !academyMode ? (
         <AcademyTutor
           activeStep={activeStep}
@@ -687,7 +748,13 @@ function App() {
   );
 }
 
-function TopNav({ currentUser, onOpenAcademy, onLogout }) {
+function TopNav({
+  currentUser,
+  academyModeActive,
+  onToggleAcademy,
+  onOpenAcademy,
+  onLogout,
+}) {
   return (
     <header className="top-nav">
       <div className="brand">
@@ -709,11 +776,67 @@ function TopNav({ currentUser, onOpenAcademy, onLogout }) {
       <div className="nav-search" aria-label="Search">
         <span className="search-icon" />
       </div>
+      <AcademyToggle active={academyModeActive} onToggle={onToggleAcademy} />
       <button className="profile-button" onClick={onLogout} aria-label="Shrey profile">
         <span className="avatar" />
         {currentUser ? <span>{currentUser.role}</span> : null}
       </button>
     </header>
+  );
+}
+
+function AcademyToggle({ active, onToggle }) {
+  return (
+    <button
+      className={`academy-toggle ${active ? "active" : ""}`}
+      onClick={onToggle}
+      aria-pressed={active}
+    >
+      <span className="toggle-track">
+        <span className="toggle-knob" />
+      </span>
+      <span>Academy mode</span>
+    </button>
+  );
+}
+
+function AcademyTopBar({ visible, onClose }) {
+  return (
+    <div className={`academy-topbar ${visible ? "visible" : ""}`}>
+      <button onClick={onClose}>✕ Exit</button>
+      <span>LOFTY ACADEMY MODE</span>
+      <div />
+    </div>
+  );
+}
+
+function LeftPanel({ open, contentVisible }) {
+  return (
+    <aside className={`left-panel ${open ? "open" : ""}`} aria-label="Academy lessons">
+      <div className={`panel-content ${contentVisible ? "visible" : ""}`}>
+        <div className="panel-placeholder">
+          <span>Lessons</span>
+          <div />
+          <div />
+          <div />
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function RightPanel({ open, contentVisible }) {
+  return (
+    <aside className={`right-panel ${open ? "open" : ""}`} aria-label="Academy AI chat">
+      <div className={`panel-content ${contentVisible ? "visible" : ""}`}>
+        <div className="panel-placeholder">
+          <span>AI chat history</span>
+          <div />
+          <div />
+          <div />
+        </div>
+      </div>
+    </aside>
   );
 }
 
@@ -750,159 +873,6 @@ function DemoLogin({ profiles, backendConnected, onLogin }) {
   );
 }
 
-function AcademyMode({
-  userName,
-  activeTarget,
-  activeTargetName,
-  cursorLabel,
-  cursorPulse,
-  leadInsightOpen,
-  lessonIndex,
-  releaseMode,
-  knowledgeMode,
-  backendLessons,
-  activeStep,
-  messages,
-  question,
-  currentUpdate,
-  helpCenterTutorial,
-  activeBackendLesson,
-  backendStatus,
-  currentUser,
-  voiceStatus,
-  hasActiveTarget,
-  hasResumeTarget,
-  setQuestion,
-  onSelectLessonStep,
-  onAskQuestion,
-  onNextStep,
-  onExplainRelease,
-  onExplainHelpTutorial,
-  onGenerateBackendLesson,
-  onPlayVoice,
-  onClose,
-}) {
-  return (
-    <section className="academy-mode" aria-label="Lofty Academy Mode">
-      <CourseSidebar
-        lessonIndex={lessonIndex}
-        activeTarget={activeTargetName}
-        releaseMode={releaseMode}
-        knowledgeMode={knowledgeMode}
-        backendLessons={backendLessons}
-        onSelectLessonStep={onSelectLessonStep}
-        onExplainRelease={onExplainRelease}
-        onExplainHelpTutorial={onExplainHelpTutorial}
-      />
-      <div className="academy-simulator">
-        <div className="simulator-topbar">
-          <div>
-            <span>Academy Mode</span>
-            <strong>Interactive Lofty simulator</strong>
-          </div>
-          <button onClick={onClose}>Exit</button>
-        </div>
-        <Dashboard
-          userName={userName}
-          activeTarget={activeTarget}
-          cursorLabel={cursorLabel}
-          cursorPulse={cursorPulse}
-          leadInsightOpen={leadInsightOpen}
-          onExplainRelease={onExplainRelease}
-        />
-      </div>
-      <AcademyTutor
-        docked
-        activeStep={activeStep}
-        lessonIndex={lessonIndex}
-        messages={messages}
-        question={question}
-        releaseMode={releaseMode}
-        knowledgeMode={knowledgeMode}
-        currentUpdate={currentUpdate}
-        helpCenterTutorial={helpCenterTutorial}
-        activeBackendLesson={activeBackendLesson}
-        backendStatus={backendStatus}
-        currentUser={currentUser}
-        voiceStatus={voiceStatus}
-        hasActiveTarget={hasActiveTarget}
-        hasResumeTarget={hasResumeTarget}
-        setQuestion={setQuestion}
-        onAskQuestion={onAskQuestion}
-        onNextStep={onNextStep}
-        onExplainRelease={onExplainRelease}
-        onExplainHelpTutorial={onExplainHelpTutorial}
-        onGenerateBackendLesson={onGenerateBackendLesson}
-        onPlayVoice={onPlayVoice}
-        onClose={onClose}
-      />
-    </section>
-  );
-}
-
-function CourseSidebar({
-  lessonIndex,
-  activeTarget,
-  releaseMode,
-  knowledgeMode,
-  backendLessons,
-  onSelectLessonStep,
-  onExplainRelease,
-  onExplainHelpTutorial,
-}) {
-  const releaseLesson = findLessonBySourceType(backendLessons, "release_note");
-  const helpLesson = findLessonBySourceType(backendLessons, "help_center_article");
-  const completedCoreCount = activeTarget
-    ? Math.min(lessonIndex + 1, lessonSteps.length)
-    : 0;
-  const totalLessons = lessonSteps.length + 2;
-  const completedCount =
-    completedCoreCount + (releaseMode ? 1 : 0) + (knowledgeMode ? 1 : 0);
-
-  return (
-    <aside className="course-sidebar" aria-label="Academy course list">
-      <div className="course-header">
-        <span>Lofty Academy</span>
-        <h2>Onboarding Course</h2>
-        <p>{completedCount}/{totalLessons} lessons touched</p>
-        <div className="course-meter">
-          <span style={{ width: `${(completedCount / totalLessons) * 100}%` }} />
-        </div>
-      </div>
-
-      <div className="course-section">
-        <span>Core onboarding</span>
-        {lessonSteps.map((step, index) => {
-          const isActive = activeTarget === step.target;
-          const isComplete = activeTarget && index < lessonIndex;
-          return (
-            <button
-              key={step.target}
-              className={isActive ? "active" : ""}
-              onClick={() => onSelectLessonStep(index)}
-            >
-              <strong>{step.label}</strong>
-              <small>{isComplete ? "Complete" : isActive ? "In progress" : "Lesson"}</small>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="course-section">
-        <span>Updates and docs</span>
-        <button className={releaseMode ? "active" : ""} onClick={onExplainRelease}>
-          <strong>Lofty 4.40 Release</strong>
-          <small>{releaseLesson ? "Saved in Insforge" : "Release lesson"}</small>
-        </button>
-        <button className={knowledgeMode ? "active" : ""} onClick={onExplainHelpTutorial}>
-          <strong>Help Center Tutorial</strong>
-          <small>{helpLesson ? "Extracted lesson" : "Documentation lesson"}</small>
-        </button>
-      </div>
-    </aside>
-  );
-}
-
 function Dashboard({
   userName,
   activeTarget,
@@ -910,7 +880,6 @@ function Dashboard({
   cursorPulse,
   leadInsightOpen,
   onExplainRelease,
-  onOpenAcademyMode,
 }) {
   return (
     <section className="dashboard" aria-label="Lofty dashboard mock">
@@ -927,11 +896,6 @@ function Dashboard({
           <button className="dashboard-select">My Dashboard</button>
         </div>
         <div className="dashboard-actions">
-          {onOpenAcademyMode ? (
-            <button className="academy-mode-button" onClick={onOpenAcademyMode}>
-              Turn on Academy Mode
-            </button>
-          ) : null}
           <button className="priority-select">Today's Priorities</button>
           <button className="grid-button" aria-label="Dashboard grid">
             <span />
